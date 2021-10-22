@@ -67,7 +67,7 @@ def retrieve_user(users_coll, username: str):
     if (username in users_coll):
         user_dict = users_coll[username]
 
-        return User(**user_dict)
+        return UserDB(**user_dict)
     return None
 
 def authenticate_user(users_coll, username: str, password: str):
@@ -76,6 +76,7 @@ def authenticate_user(users_coll, username: str, password: str):
         return False
     elif (not verify_hash(password, user.hashed_password)):
         return False
+
     return user
 
 def create_access_token(data: dict, expires_after: Optional[timedelta] = None):
@@ -121,7 +122,7 @@ async def get_current_user_from_token(token: str = Depends(oauth2_scheme)):
     if (not user or user.disabled):
         raise inactive_user_exc
 
-    return user
+    return User(**user.dict())
 
 # token login route for oauth2 package to use to exchange for token
 @app.post("/token")
