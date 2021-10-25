@@ -140,3 +140,4 @@ cython_debug/
 # fastapi development
 *.db
 .vscode
+*logs.txt
