@@ -28,6 +28,7 @@
     - [docker-auto-labels](#docker-auto-labels)
     - [(Optionally) adding labels manually](#optionally-adding-labels-manually)
   - [c. Deploy to a Docker Swarm mode cluster](#c-deploy-to-a-docker-swarm-mode-cluster)
+    - [Procedure](#procedure)
     - [Deployment Technical Details](#deployment-technical-details)
   - [d. Continuous Integration / Continuous Delivery](#d-continuous-integration--continuous-delivery)
 - [5. Docker Compose files and env vars](#5-docker-compose-files-and-env-vars)
@@ -570,7 +571,7 @@ docker node update --label-add staging-fastapi-app.app-db-data=true cat.example.
 ```
 
 ## c. Deploy to a Docker Swarm mode cluster
-
+### Procedure
 There are 3 steps:
 
 1. **Build** your app images
