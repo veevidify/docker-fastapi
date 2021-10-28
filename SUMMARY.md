@@ -1,34 +1,35 @@
 # Contents
 - [Contents](#contents)
 - [1. Prerequisites and installation:](#1-prerequisites-and-installation)
-    - [Workflow](#workflow)
-    - [URLs:](#urls)
+  - [a. Workflow](#a-workflow)
+  - [b. URLs:](#b-urls)
 - [2. Backend local dev env](#2-backend-local-dev-env)
-    - [General workflow](#general-workflow)
-    - [Structures](#structures)
-    - [Docker Compose Override](#docker-compose-override)
-    - [Backend tests](#backend-tests)
-      - [Test running stack](#test-running-stack)
-      - [Local tests](#local-tests)
-      - [Test Coverage](#test-coverage)
-    - [Development with Jupyter Notebooks](#development-with-jupyter-notebooks)
-    - [Migrations](#migrations)
-    - [Development in `localhost` with a custom domain](#development-in-localhost-with-a-custom-domain)
-    - [Development with a custom IP](#development-with-a-custom-ip)
-    - [Change the development "domain"](#change-the-development-domain)
+  - [a. General workflow](#a-general-workflow)
+  - [b. Structures](#b-structures)
+  - [c. Docker Compose Override](#c-docker-compose-override)
+  - [d. Backend tests](#d-backend-tests)
+    - [Test running stack](#test-running-stack)
+    - [Local tests](#local-tests)
+    - [Test Coverage](#test-coverage)
+  - [e. Development with Jupyter Notebooks](#e-development-with-jupyter-notebooks)
+  - [f. Migrations](#f-migrations)
+  - [g. Development in `localhost` with a custom domain](#g-development-in-localhost-with-a-custom-domain)
+  - [h. Development with a custom IP](#h-development-with-a-custom-ip)
+  - [i. Change the development "domain"](#i-change-the-development-domain)
 - [3. Frontend development](#3-frontend-development)
-    - [Removing frontend](#removing-frontend)
+  - [a. Start development](#a-start-development)
+  - [b. (Optional) Removing frontend](#b-optional-removing-frontend)
 - [4. Deployment](#4-deployment)
-    - [Traefik network](#traefik-network)
-    - [Persisting Docker named volumes](#persisting-docker-named-volumes)
-      - [Adding services with volumes](#adding-services-with-volumes)
-      - [`docker-auto-labels`](#docker-auto-labels)
-      - [(Optionally) adding labels manually](#optionally-adding-labels-manually)
-    - [Deploy to a Docker Swarm mode cluster](#deploy-to-a-docker-swarm-mode-cluster)
-      - [Deployment Technical Details](#deployment-technical-details)
-    - [Continuous Integration / Continuous Delivery](#continuous-integration--continuous-delivery)
+  - [a. Traefik network](#a-traefik-network)
+  - [b. Persisting Docker named volumes](#b-persisting-docker-named-volumes)
+    - [Adding services with volumes](#adding-services-with-volumes)
+    - [docker-auto-labels](#docker-auto-labels)
+    - [(Optionally) adding labels manually](#optionally-adding-labels-manually)
+  - [c. Deploy to a Docker Swarm mode cluster](#c-deploy-to-a-docker-swarm-mode-cluster)
+    - [Deployment Technical Details](#deployment-technical-details)
+  - [d. Continuous Integration / Continuous Delivery](#d-continuous-integration--continuous-delivery)
 - [5. Docker Compose files and env vars](#5-docker-compose-files-and-env-vars)
-    - [The .env file](#the-env-file)
+  - [The .env file](#the-env-file)
 - [6. URLs](#6-urls)
     - [Production URLs](#production-urls)
     - [Staging URLs](#staging-urls)
@@ -39,20 +40,23 @@
 - [7. Project generation and updating, or re-generating](#7-project-generation-and-updating-or-re-generating)
 
 ---
+_**Disclaimer**: This file is a summarised version of `README.md`_
+
+---
 
 # 1. Prerequisites and installation:
 * [Docker Compose](https://docs.docker.com/compose/install/).
 * [Poetry](https://python-poetry.org/) for Python package and environment management.
 * Node.js (with `npm`) for Frontend.
 
-### Workflow
+## a. Workflow
 Start the stack with Docker Compose:
 
 ```bash
 docker-compose up -d
 ```
 
-### URLs:
+## b. URLs:
 - Frontend: http://localhost
 - Backend API: http://localhost/api/
 - Swagger UI: http://localhost/docs
@@ -77,24 +81,36 @@ docker-compose logs backend
 
 # 2. Backend local dev env
 
-### General workflow
+## a. General workflow
 
 - Install [Poetry](https://python-poetry.org/).
 - Dependencies:
 ```console
 $ cd `backend/app/`
 ```
-
+- Make sure `poetry.toml` has the right config (not modified):
+```console
+$ cat poetry.toml
+```
+Output:
+```console
+[virtualenvs]
+create = true
+in-project = true
+```
+- Get packages
 ```console
 $ poetry install
 ```
 
-Start a shell session (venv):
+- Start a shell session (venv):
 
 ```console
 $ poetry shell
 ```
-### Structures
+- In your editor, point python interpreter and environment to the one `poetry` created, e.g. `./backend/app/.venv/bin/python3.8`
+
+## b. Structures
 - SQLAlchemy models: `./backend/app/app/models/`
 - Pydantic schemas: `./backend/app/app/schemas/`
 - API endpoints: `./backend/app/app/api/`
@@ -102,7 +118,7 @@ $ poetry shell
 - Celery worker's tasks in `./backend/app/app/worker.py`.
 - Additional packages for worker: `./backend/app/celeryworker.dockerfile`.
 
-### Docker Compose Override
+## c. Docker Compose Override
 - Overrides only take effect for local dev env, to achieve this, modify `docker-compose.override.yml`.
 - E.g., volume mount, allowing changes to be reflected, without having to rebuild Docker image (development only)
 - For prod, build the Docker image, preferably in CI.
@@ -139,7 +155,7 @@ root@7f2607af31c3:/app# bash /start-reload.sh
 
 - This keeps the container alive instead of exiting.
 
-### Backend tests
+## d. Backend tests
 - To test the backend run:
 
 ```console
@@ -150,14 +166,14 @@ $ DOMAIN=backend sh ./scripts/test.sh
 - The tests run with Pytest: `./backend/app/app/tests/`.
 - Gitlab CI is included which runs tests.
 
-#### Test running stack
+### Test running stack
 - If stack is up, use:
 
 ```bash
 docker-compose exec backend /app/tests-start.sh
 ```
 
-#### Local tests
+### Local tests
 - Start the stack:
 
 ```Bash
@@ -175,7 +191,7 @@ docker-compose exec backend /app/tests-start.sh
 docker-compose exec backend bash /app/tests-start.sh -x
 ```
 
-#### Test Coverage
+### Test Coverage
 - Enable HTML report, `pytest` fashion, by passing `--cov-report=html`:
 ```Bash
 DOMAIN=backend sh ./scripts/test-local.sh --cov-report=html
@@ -185,7 +201,7 @@ DOMAIN=backend sh ./scripts/test-local.sh --cov-report=html
 docker-compose exec backend bash /app/tests-start.sh --cov-report=html
 ```
 
-### Development with Jupyter Notebooks
+## e. Development with Jupyter Notebooks
 
 - `docker-compose.override.yml` file sends variable `env` = `dev` to the build process of the Docker image (local development), while `Dockerfile` has steps to install and configure Jupyter within the container.
 - `exec` into running container:
@@ -216,7 +232,7 @@ root@73e0ec1f1ae6:/app# $JUPYTER
 http://localhost:8888/token=f20939a41524d021fbfc62b31be8ea4dd9232913476f4397
 ```
 
-### Migrations
+## f. Migrations
 - Run migrations using `alembic` commands inside the container, migration code will be in your app directory, with volume mounting.
 - `exec` into backend:
 ```console
@@ -246,13 +262,13 @@ and comment the line in the file `prestart.sh` that contains:
 $ alembic upgrade head
 ```
 
-### Development in `localhost` with a custom domain
+## g. Development in `localhost` with a custom domain
 - With hostname/CORS/cookies issues, you can use `localhost.tiangolo.com`, it is set up to point to `localhost` (to the IP `127.0.0.1`) and all subdomains.
 - `localhost.tiangolo.com` was configured to be allowed. Otherwise, add it to the list in the variable `BACKEND_CORS_ORIGINS` in the `.env` file.
 - To configure it in your stack, follow **Change the development "domain"** below, using domain `localhost.tiangolo.com`.
 - You should be able to open: http://localhost.tiangolo.com, it will be server by your stack in `localhost`.
 
-### Development with a custom IP
+## h. Development with a custom IP
 - If you are running Docker in an IP address different than `127.0.0.1` (`localhost`) and `192.168.99.100` (the default of Docker Toolbox), you will need to use a fake local domain (`dev.fastapi-app.com`) and make your computer think that the domain is is served by the custom IP (e.g. `192.168.99.150`).
 - `dev.fastapi-app.com` was configured to be allowed. If you want a custom one, add it to the list in the variable `BACKEND_CORS_ORIGINS` in the `.env` file.
 - Open `/etc/hosts`, added line might look like:
@@ -263,7 +279,7 @@ $ alembic upgrade head
 
 - You should be able to open: http://dev.fastapi-app.com, it will be server by your stack in `localhost`.
 
-### Change the development "domain"
+## i. Change the development "domain"
 
 If you need to use your local stack with a different domain than `localhost`, you need to make sure the domain you use points to the IP where your stack is set up. See the different ways to achieve that in the sections above (i.e. using Docker Toolbox with `local.dockertoolbox.tiangolo.com`, using `localhost.tiangolo.com` or using `dev.fastapi-app.com`).
 
@@ -308,6 +324,7 @@ and check all the corresponding available URLs in the section at the end.
 ---
 
 # 3. Frontend development
+## a. Start development
 - Enter the `frontend` directory:
 ```bash
 cd frontend
@@ -330,7 +347,7 @@ to:
 VUE_APP_ENV=staging
 ```
 
-### Removing frontend
+## b. (Optional) Removing frontend
 If you wish to remove in favour of other frontends:
 - Remove the `./frontend` directory.
 - In the `docker-compose.yml` file, remove the whole service / section `frontend`.
@@ -351,7 +368,7 @@ And you can use CI (continuous integration) systems to do it automatically.
 
 But you have to configure a couple things first.
 
-### Traefik network
+## a. Traefik network
 
 This stack expects the public Traefik network to be named `traefik-public`, just as in the tutorials in <a href="https://dockerswarm.rocks" class="external-link" target="_blank">DockerSwarm.rocks</a>.
 
@@ -369,29 +386,25 @@ Change `traefik-public` to the name of the used Traefik network. And then update
 TRAEFIK_PUBLIC_NETWORK=traefik-public
 ```
 
-### Persisting Docker named volumes
+## b. Persisting Docker named volumes
 
-You need to make sure that each service (Docker container) that uses a volume is always deployed to the same Docker "node" in the cluster, that way it will preserve the data. Otherwise, it could be deployed to a different node each time, and each time the volume would be created in that new node before starting the service. As a result, it would look like your service was starting from scratch every time, losing all the previous data.
+- Make sure each service (Docker container) that uses a volume is always deployed to the same Docker "node" in the cluster to preserve the data. Otherwise, if deployed to a different node, the volume would be re-created in that new node before starting the service, as if starting from scratch and lose all the previous data.
+- Especially important for a service running a database, saving files in backend service.
+- To achieve this, put constraints in the services that use data volumes (like databases), making them be deployed to a Docker node with a specific label.
+- You need to have that label assigned to only one of your nodes.
 
-That's specially important for a service running a database. But the same problem would apply if you were saving files in your main backend service (for example, if those files were uploaded by your users, or if they were created by your system).
+### Adding services with volumes
 
-To solve that, you can put constraints in the services that use one or more data volumes (like databases) to make them be deployed to a Docker node with a specific label. And of course, you need to have that label assigned to one (only one) of your nodes.
-
-#### Adding services with volumes
-
-For each service that uses a volume (databases, services with uploaded files, etc) you should have a label constraint in your `docker-compose.yml` file.
-
-To make sure that your labels are unique per volume per stack (for example, that they are not the same for `prod` and `stag`) you should prefix them with the name of your stack and then use the same name of the volume.
-
-Then you need to have those constraints in your `docker-compose.yml` file for the services that need to be fixed with each volume.
-
-To be able to use different environments, like `prod` and `stag`, you should pass the name of the stack as an environment variable. Like:
+- For each service that uses a volume (databases, services with persisted files, etc) assign a label constraint in `docker-compose.yml`.
+- To make sure labels are unique per volume, per stack (for example, that they are not the same for `prod` and `staging`), prefix them with the name of the stack, then use the same name of the volume.
+- Then, have those constraints in `docker-compose.yml` for the services that need to be fixed with each volume.
+- To use different environments, like `prod` and `staging`, pass the name of the stack as an environment variable. Like:
 
 ```bash
 STACK_NAME=staging-fastapi-app sh ./scripts/deploy.sh
 ```
 
-To use and expand that environment variable inside the `docker-compose.yml` files you can add the constraints to the services like:
+- To use and expand that environment variable inside the `docker-compose.yml`, add the constraints to the services:
 
 ```yaml
 version: '3'
@@ -405,7 +418,7 @@ services:
           - node.labels.${STACK_NAME?Variable not set}.app-db-data == true
 ```
 
-note the `${STACK_NAME?Variable not set}`. In the script `./scripts/deploy.sh`, the `docker-compose.yml` would be converted, and saved to a file `docker-stack.yml` containing:
+- The `${STACK_NAME?Variable not set}`, used by script `./scripts/deploy.sh`, would convert `docker-compose.yml`, and saved to a file `docker-stack.yml` containing:
 
 ```yaml
 version: '3'
@@ -419,37 +432,35 @@ services:
           - node.labels.fastapi-template-app.app-db-data == true
 ```
 
-**Note**: The `${STACK_NAME?Variable not set}` means "use the environment variable `STACK_NAME`, but if it is not set, show an error `Variable not set`".
+**Note**:
+- `${STACK_NAME?Variable not set}` uses the environment variable `STACK_NAME`. If not set, show an error `Variable not set`".
+- More volumes added means the corresponding constraints to the services that use that named volume need to be added/set.
+- Then create those labels in some nodes in your Docker Swarm mode cluster. `docker-auto-labels` can do this automatically.
 
-If you add more volumes to your stack, you need to make sure you add the corresponding constraints to the services that use that named volume.
+### docker-auto-labels
 
-Then you have to create those labels in some nodes in your Docker Swarm mode cluster. You can use `docker-auto-labels` to do it automatically.
+- [`docker-auto-labels`](https://github.com/tiangolo/docker-auto-labels) can automatically read the placement constraint labels in your Docker stack (Docker Compose file), and assign them to a random Docker node in your Swarm mode cluster if those labels don't exist yet.
 
-#### `docker-auto-labels`
-
-You can use [`docker-auto-labels`](https://github.com/tiangolo/docker-auto-labels) to automatically read the placement constraint labels in your Docker stack (Docker Compose file) and assign them to a random Docker node in your Swarm mode cluster if those labels don't exist yet.
-
-To do that, you can install `docker-auto-labels`:
+- To achieve this, install `docker-auto-labels`:
 
 ```bash
 pip install docker-auto-labels
 ```
 
-And then run it passing your `docker-stack.yml` file as a parameter:
+- Then run it, passing `docker-stack.yml` as a parameter:
 
 ```bash
 docker-auto-labels docker-stack.yml
 ```
 
-You can run that command every time you deploy, right before deploying, as it doesn't modify anything if the required labels already exist.
+- You can run that command every time you deploy, right before deploying, as it doesn't modify anything if the required labels already exist.
 
-#### (Optionally) adding labels manually
+### (Optionally) adding labels manually
+Without using `docker-auto-labels`, you can manually assign the constraint labels to specific nodes in your Docker Swarm mode cluster:
 
-If you don't want to use `docker-auto-labels` or for any reason you want to manually assign the constraint labels to specific nodes in your Docker Swarm mode cluster, you can do the following:
+* First, SSH into your Docker Swarm mode cluster.
 
-* First, connect via SSH to your Docker Swarm mode cluster.
-
-* Then check the available nodes with:
+* Then check the available nodes, and chose a node from the list. For example, `dog.example.com`:
 
 ```console
 $ docker node ls
@@ -463,21 +474,19 @@ nfa3d4df2df34as2fd34230rm *   dog.example.com        Ready               Active 
 c4sdf2342asdfasd4234234ii     snake.example.com      Ready               Active              Reachable
 ```
 
-then chose a node from the list. For example, `dog.example.com`.
-
 * Add the label to that node. Use as label the name of the stack you are deploying followed by a dot (`.`) followed by the named volume, and as value, just `true`, e.g.:
 
 ```bash
 docker node update --label-add fastapi-template-app.app-db-data=true dog.example.com
 ```
 
-* Then you need to do the same for each stack version you have. For example, for staging you could do:
+* Then, do the same for each stack version you have. For example, for staging:
 
 ```bash
 docker node update --label-add staging-fastapi-app.app-db-data=true cat.example.com
 ```
 
-### Deploy to a Docker Swarm mode cluster
+## c. Deploy to a Docker Swarm mode cluster
 
 There are 3 steps:
 
@@ -534,9 +543,11 @@ bash ./scripts/deploy.sh
 
 ---
 
-If you change your mind and, for example, want to deploy everything to a different domain, you only have to change the `DOMAIN` environment variable in the previous commands. If you wanted to add a different version / environment of your stack, like "`preproduction`", you would only have to set `TAG=preproduction` in your command and update these other environment variables accordingly. And it would all work, that way you could have different environments and deployments of the same app in the same cluster.
+- If you change your mind and, for example, want to deploy everything to a different domain, you only have to change the `DOMAIN` environment variable in the previous commands.
 
-#### Deployment Technical Details
+- If you wanted to add a different version / environment of your stack, like "`preproduction`", you would only have to set `TAG=preproduction` in your command and update these other environment variables accordingly. And it would all work, that way you could have different environments and deployments of the same app in the same cluster.
+
+### Deployment Technical Details
 
 Building and pushing is done with the `docker-compose.yml` file, using the `docker-compose` command. The file `docker-compose.yml` uses the file `.env` with default environment variables. And the scripts set some additional environment variables as well.
 
@@ -571,44 +582,35 @@ docker-auto-labels docker-stack.yml
 docker stack deploy -c docker-stack.yml --with-registry-auth "${STACK_NAME?Variable not set}"
 ```
 
-### Continuous Integration / Continuous Delivery
+## d. Continuous Integration / Continuous Delivery
 
-If you use GitLab CI, the included `.gitlab-ci.yml` can automatically deploy it. You may need to update it according to your GitLab configurations.
+- `.gitlab-ci.yml` is included and can automatically deploy. You may need to update it according to your GitLab configurations.
 
-If you use any other CI / CD provider, you can base your deployment from that `.gitlab-ci.yml` file, as all the actual script steps are performed in `bash` scripts that you can easily re-use.
+- For other CI / CD providers, base your deployment from `.gitlab-ci.yml`, since all script steps are performed in reusable `bash` scripts.
 
 GitLab CI is configured assuming 2 environments following GitLab flow:
 
 * `prod` (production) from the `production` branch.
 * `stag` (staging) from the `master` branch.
 
-If you need to add more environments, for example, you could imagine using a client-approved `preprod` branch, you can just copy the configurations in `.gitlab-ci.yml` for `stag` and rename the corresponding variables. The Docker Compose file and environment variables are configured to support as many environments as you need, so that you only need to modify `.gitlab-ci.yml` (or whichever CI system configuration you are using).
+- If you require more environments, e.g. client-approved/QA `preprod` branch, copy the configurations in `.gitlab-ci.yml` for `stag`, rename the corresponding variables.
+- The Docker Compose file and environment variables are configured to support as many environments as you need, so that you only need to modify `.gitlab-ci.yml`.
 
 ---
 
 # 5. Docker Compose files and env vars
 
-There is a main `docker-compose.yml` file with all the configurations that apply to the whole stack, it is used automatically by `docker-compose`.
+- Main `docker-compose.yml` file contains all configurations for the whole stack.
+- `docker-compose.override.yml` gives overrides for development, e.g. volume mount source code. It is used automatically by `docker-compose`, applying overrides on top of `docker-compose.yml` (merging `yaml`).
+- These Docker Compose files use the `.env` file, containing configurations to be injected as environment variables in the containers.
+- They also use some additional configurations taken from environment variables set in the scripts before calling the `docker-compose` command.
+- This design pattern support "stages" workflow, like development, building, testing, and deployment, allowing the deployment to different environments.
+- Extending is simple, e.g. to have another deployment environment, say `preprod`, just change environment variables, while keep using the same Docker Compose files.
 
-And there's also a `docker-compose.override.yml` with overrides for development, for example to mount the source code as a volume. It is used automatically by `docker-compose` to apply overrides on top of `docker-compose.yml`.
+## The .env file
 
-These Docker Compose files use the `.env` file containing configurations to be injected as environment variables in the containers.
-
-They also use some additional configurations taken from environment variables set in the scripts before calling the `docker-compose` command.
-
-It is all designed to support several "stages", like development, building, testing, and deployment. Also, allowing the deployment to different environments like staging and production (and you can add more environments very easily).
-
-They are designed to have the minimum repetition of code and configurations, so that if you need to change something, you have to change it in the minimum amount of places. That's why files use environment variables that get auto-expanded. That way, if for example, you want to use a different domain, you can call the `docker-compose` command with a different `DOMAIN` environment variable instead of having to change the domain in several places inside the Docker Compose files.
-
-Also, if you want to have another deployment environment, say `preprod`, you just have to change environment variables, but you can keep using the same Docker Compose files.
-
-### The .env file
-
-The `.env` file is the one that contains all your configurations, generated keys and passwords, etc.
-
-Depending on your workflow, you could want to exclude it from Git, for example if your project is public. In that case, you would have to make sure to set up a way for your CI tools to obtain it while building or deploying your project.
-
-One way to do it could be to add each environment variable to your CI/CD system, and updating the `docker-compose.yml` file to read that specific env var instead of reading the `.env` file.
+- `.env` file is the one that contains all your configurations, generated keys and passwords, etc.
+- If git-ignored, add each environment variable to CI/CD system, and updating the `docker-compose.yml` file to read that specific env var instead of reading the `.env` file.
 
 ---
 
