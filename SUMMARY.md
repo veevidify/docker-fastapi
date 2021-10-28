@@ -7,15 +7,17 @@
   - [a. General workflow](#a-general-workflow)
   - [b. Structures](#b-structures)
   - [c. Docker Compose Override](#c-docker-compose-override)
-  - [d. Backend tests](#d-backend-tests)
+  - [d. REPL](#d-repl)
+  - [e. Backend tests](#e-backend-tests)
     - [Test running stack](#test-running-stack)
     - [Local tests](#local-tests)
     - [Test Coverage](#test-coverage)
-  - [e. Development with Jupyter Notebooks](#e-development-with-jupyter-notebooks)
-  - [f. Migrations](#f-migrations)
-  - [g. Development in `localhost` with a custom domain](#g-development-in-localhost-with-a-custom-domain)
-  - [h. Development with a custom IP](#h-development-with-a-custom-ip)
-  - [i. Change the development "domain"](#i-change-the-development-domain)
+  - [f. Development with Jupyter Notebooks](#f-development-with-jupyter-notebooks)
+  - [g. Migrations](#g-migrations)
+  - [h. Working with db](#h-working-with-db)
+  - [i. Development in `localhost` with a custom domain](#i-development-in-localhost-with-a-custom-domain)
+  - [j. Development with a custom IP](#j-development-with-a-custom-ip)
+  - [k. Change the development "domain" name](#k-change-the-development-domain-name)
 - [3. Frontend development](#3-frontend-development)
   - [a. Start development](#a-start-development)
   - [b. (Optional) Removing frontend](#b-optional-removing-frontend)
@@ -155,7 +157,26 @@ root@7f2607af31c3:/app# bash /start-reload.sh
 
 - This keeps the container alive instead of exiting.
 
-## d. Backend tests
+## d. REPL
+
+- `ipython` is installed as REPL, to use, cd into backend folder and invoke it:
+```console
+cd backend/app
+ipython
+```
+- In here you can import backend's modules and test snippets/functions:
+```
+ $  ipython
+Python 3.8.0 (default, Feb 25 2021, 22:10:10)
+Type 'copyright', 'credits' or 'license' for more information
+IPython 7.28.0 -- An enhanced Interactive Python. Type '?' for help.
+
+In [1]: from fastapi import FastAPI
+
+In [2]: from .app.models.item import Item
+```
+
+## e. Backend tests
 - To test the backend run:
 
 ```console
@@ -201,7 +222,7 @@ DOMAIN=backend sh ./scripts/test-local.sh --cov-report=html
 docker-compose exec backend bash /app/tests-start.sh --cov-report=html
 ```
 
-## e. Development with Jupyter Notebooks
+## f. Development with Jupyter Notebooks
 
 - `docker-compose.override.yml` file sends variable `env` = `dev` to the build process of the Docker image (local development), while `Dockerfile` has steps to install and configure Jupyter within the container.
 - `exec` into running container:
@@ -232,7 +253,7 @@ root@73e0ec1f1ae6:/app# $JUPYTER
 http://localhost:8888/token=f20939a41524d021fbfc62b31be8ea4dd9232913476f4397
 ```
 
-## f. Migrations
+## g. Migrations
 - Run migrations using `alembic` commands inside the container, migration code will be in your app directory, with volume mounting.
 - `exec` into backend:
 ```console
@@ -243,14 +264,36 @@ $ docker-compose exec backend bash
 ```console
 $ alembic revision --autogenerate -m "Add column last_name to User model"
 ```
+Output:
+```console
+root@54b8181cdcfb:/app# alembic revision --autogenerate -m "Add column last_name to User model and dbschema"
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.ddl.postgresql] Detected sequence named 'user_id_seq' as owned by integer column 'user(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'item_id_seq' as owned by integer column 'item(id)', assuming SERIAL and omitting
+INFO  [alembic.autogenerate.compare] Detected added column 'user.last_name'
+INFO  [alembic.autogenerate.compare] Detected NOT NULL on column 'user.email'
+INFO  [alembic.autogenerate.compare] Detected NOT NULL on column 'user.hashed_password'
+  Generating /app/alembic/versions/14ca970985f2_add_column_last_name_to_user_model_and_.py
+  ...  done
+
+```
+- Double-check new file generated under `backend/app/alembic/versions`
 - Run the migration to apply changes to database:
 
 ```console
 $ alembic upgrade head
 ```
+Output
+```console
+root@54b8181cdcfb:/app# alembic upgrade head
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade d4867f3a4c0a -> 14ca970985f2, Add column last_name to User model and dbschema
+```
 - Don't forget to commit.
 
-- If you don't want to use migrations at all, uncomment the line in the file at `./backend/app/app/db/init_db.py` with:
+**Note**: If you don't want to use migrations at all, uncomment the line in the file at `./backend/app/app/db/init_db.py` with:
 
 ```python
 Base.metadata.create_all(bind=engine)
@@ -262,13 +305,53 @@ and comment the line in the file `prestart.sh` that contains:
 $ alembic upgrade head
 ```
 
-## g. Development in `localhost` with a custom domain
+## h. Working with db
+- You can browse the db via psql inside the db container:
+```console
+$ docker-compose exec db psql --user=postgres app
+```
+- Then some psql commands or sql queries:
+```console
+psql (12.8 (Debian 12.8-1.pgdg110+1))
+Type "help" for help.
+
+app-# \dt
+```
+Output:
+```console
+app-# \dt
+              List of relations
+ Schema |      Name       | Type  |  Owner
+--------+-----------------+-------+----------
+ public | alembic_version | table | postgres
+ public | item            | table | postgres
+ public | user            | table | postgres
+(3 rows)
+```
+```console
+app=# select * from public.user;
+```
+Output:
+```console
+app=# select * from public.user;
+ id | full_name |         email         |                       hashed_password
+             | is_active | is_superuser | last_name
+----+-----------+-----------------------+-------------------------------------------------
+-------------+-----------+--------------+-----------
+  1 |           | admin@fastapi-app.com | $2b$12$JA82XxbBWmnmHK2.71y/sOQ4172GvOO/mulsCuFT7
+wca.dZiLurhW | t         | t            |
+(1 row)
+
+```
+**Note**: This is simply a hash for "123456" for development purposes.
+
+## i. Development in `localhost` with a custom domain
 - With hostname/CORS/cookies issues, you can use `localhost.tiangolo.com`, it is set up to point to `localhost` (to the IP `127.0.0.1`) and all subdomains.
 - `localhost.tiangolo.com` was configured to be allowed. Otherwise, add it to the list in the variable `BACKEND_CORS_ORIGINS` in the `.env` file.
 - To configure it in your stack, follow **Change the development "domain"** below, using domain `localhost.tiangolo.com`.
 - You should be able to open: http://localhost.tiangolo.com, it will be server by your stack in `localhost`.
 
-## h. Development with a custom IP
+## j. Development with a custom IP
 - If you are running Docker in an IP address different than `127.0.0.1` (`localhost`) and `192.168.99.100` (the default of Docker Toolbox), you will need to use a fake local domain (`dev.fastapi-app.com`) and make your computer think that the domain is is served by the custom IP (e.g. `192.168.99.150`).
 - `dev.fastapi-app.com` was configured to be allowed. If you want a custom one, add it to the list in the variable `BACKEND_CORS_ORIGINS` in the `.env` file.
 - Open `/etc/hosts`, added line might look like:
@@ -279,7 +362,7 @@ $ alembic upgrade head
 
 - You should be able to open: http://dev.fastapi-app.com, it will be server by your stack in `localhost`.
 
-## i. Change the development "domain"
+## k. Change the development "domain" name
 
 If you need to use your local stack with a different domain than `localhost`, you need to make sure the domain you use points to the IP where your stack is set up. See the different ways to achieve that in the sections above (i.e. using Docker Toolbox with `local.dockertoolbox.tiangolo.com`, using `localhost.tiangolo.com` or using `dev.fastapi-app.com`).
 
