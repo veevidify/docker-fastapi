@@ -122,6 +122,8 @@ $ poetry shell
 $ poetry update
 ```
 
+_**Note**: It's important to note that poetry commands should be invoked from the host, within backend/app folder, instead of from within docker container service, in order to avoid conflicts._
+
 ## b. Structures
 - SQLAlchemy models: `./backend/app/app/models/`
 - Pydantic schemas: `./backend/app/app/schemas/`
