@@ -83,7 +83,7 @@ class Settings(BaseSettings):
     USERS_OPEN_REGISTRATION: bool = False
 
     BROKER_URL: str = ""
-    RESULT_BACKEND: str = ""
+    CELERY_RESULT_BACKEND: str = ""
 
     class Config:
         case_sensitive = True

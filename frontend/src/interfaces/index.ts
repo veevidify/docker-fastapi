@@ -21,3 +21,7 @@ export interface IUserProfileCreate {
     is_active?: boolean;
     is_superuser?: boolean;
 }
+
+export interface ITaskParam {
+    msg: string;
+}

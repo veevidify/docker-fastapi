@@ -10,7 +10,7 @@ celery_app = Celery(__name__)
 
 # configs
 celery_app.conf.broker_url = os.getenv("BROKER_URL", "redis://localhost:6379/0")
-celery_app.conf.backend = os.getenv("RESULT_BACKEND", "redis://localhost:6379/0")
+celery_app.conf.result_backend = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
 celery_app.conf.task_routes = {"app.worker.run_task": "main-queue"}
 client_sentry = Client(settings.SENTRY_DSN)
 

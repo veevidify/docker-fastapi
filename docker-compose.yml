@@ -126,7 +126,7 @@ services:
       - queue
     environment:
       - CELERY_BROKER_URL=${BROKER_URL}
-      - CELERY_RESULT_BACKEND=${RESULT_BACKEND}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
 
     # replacing amqp with redis for persistence
     command: flower --port=5555 --broker=redis://queue:6379/0
@@ -161,7 +161,7 @@ services:
       # Allow explicit env var override for tests
       - SMTP_HOST=${SMTP_HOST}
       - BROKER_URL=${BROKER_URL}
-      - RESULT_BACKEND=${RESULT_BACKEND}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
     build:
       context: ./backend
       dockerfile: backend.dockerfile
@@ -187,7 +187,7 @@ services:
       # Allow explicit env var override for tests
       - SMTP_HOST=${SMTP_HOST?Variable not set}
       - BROKER_URL=${BROKER_URL?Variable not set}
-      - RESULT_BACKEND=${RESULT_BACKEND?Variable not set}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND?Variable not set}
     build:
       context: ./backend
       dockerfile: celeryworker.dockerfile
