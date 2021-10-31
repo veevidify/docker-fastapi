@@ -17,13 +17,15 @@
     - [Packages](#packages)
   - [g. Migrations](#g-migrations)
   - [h. Working with db](#h-working-with-db)
-  - [i. Development in `localhost` with a custom domain](#i-development-in-localhost-with-a-custom-domain)
-  - [j. Development with a custom IP](#j-development-with-a-custom-ip)
-  - [k. Change the development "domain" name](#k-change-the-development-domain-name)
-- [3. Frontend development](#3-frontend-development)
+  - [i. Working with queue](#i-working-with-queue)
+- [3. Development domain name](#3-development-domain-name)
+  - [a. Development in `localhost` with a custom domain](#a-development-in-localhost-with-a-custom-domain)
+  - [b. Development with a custom IP](#b-development-with-a-custom-ip)
+  - [c. Change the development "domain" name](#c-change-the-development-domain-name)
+- [4. Frontend development](#4-frontend-development)
   - [a. Start development](#a-start-development)
   - [b. (Optional) Removing frontend](#b-optional-removing-frontend)
-- [4. Deployment](#4-deployment)
+- [5. Deployment](#5-deployment)
   - [a. Traefik network](#a-traefik-network)
   - [b. Persisting Docker named volumes](#b-persisting-docker-named-volumes)
     - [Adding services with volumes](#adding-services-with-volumes)
@@ -33,16 +35,16 @@
     - [Procedure](#procedure)
     - [Deployment Technical Details](#deployment-technical-details)
   - [d. Continuous Integration / Continuous Delivery](#d-continuous-integration--continuous-delivery)
-- [5. Docker Compose files and env vars](#5-docker-compose-files-and-env-vars)
+- [6. Docker Compose files and env vars](#6-docker-compose-files-and-env-vars)
   - [The .env file](#the-env-file)
-- [6. URLs](#6-urls)
+- [7. URLs](#7-urls)
   - [a. Production URLs](#a-production-urls)
   - [b. Staging URLs](#b-staging-urls)
   - [c. Development URLs](#c-development-urls)
   - [d. Development with Docker Toolbox URLs](#d-development-with-docker-toolbox-urls)
   - [e. Development with a custom IP URLs](#e-development-with-a-custom-ip-urls)
   - [f. Development in localhost with a custom domain URLs](#f-development-in-localhost-with-a-custom-domain-urls)
-- [7. Project generation and updating, or re-generating](#7-project-generation-and-updating-or-re-generating)
+- [8. Project generation and updating, or re-generating](#8-project-generation-and-updating-or-re-generating)
   - [a. cookiecutter](#a-cookiecutter)
   - [b. Input options generating project template](#b-input-options-generating-project-template)
 
@@ -368,13 +370,17 @@ wca.dZiLurhW | t         | t            |
 ```
 **Note**: This is simply a hash for "123456" for development purposes.
 
-## i. Development in `localhost` with a custom domain
+## i. Working with queue
+
+# 3. Development domain name
+
+## a. Development in `localhost` with a custom domain
 - With hostname/CORS/cookies issues, you can use `localhost.tiangolo.com`, it is set up to point to `localhost` (to the IP `127.0.0.1`) and all subdomains.
 - `localhost.tiangolo.com` was configured to be allowed. Otherwise, add it to the list in the variable `BACKEND_CORS_ORIGINS` in the `.env` file.
 - To configure it in your stack, follow **Change the development "domain"** below, using domain `localhost.tiangolo.com`.
 - You should be able to open: http://localhost.tiangolo.com, it will be server by your stack in `localhost`.
 
-## j. Development with a custom IP
+## b. Development with a custom IP
 - If you are running Docker in an IP address different than `127.0.0.1` (`localhost`) and `192.168.99.100` (the default of Docker Toolbox), you will need to use a fake local domain (`dev.fastapi-app.com`) and make your computer think that the domain is is served by the custom IP (e.g. `192.168.99.150`).
 - `dev.fastapi-app.com` was configured to be allowed. If you want a custom one, add it to the list in the variable `BACKEND_CORS_ORIGINS` in the `.env` file.
 - Open `/etc/hosts`, added line might look like:
@@ -385,7 +391,7 @@ wca.dZiLurhW | t         | t            |
 
 - You should be able to open: http://dev.fastapi-app.com, it will be server by your stack in `localhost`.
 
-## k. Change the development "domain" name
+## c. Change the development "domain" name
 
 If you need to use your local stack with a different domain than `localhost`, you need to make sure the domain you use points to the IP where your stack is set up. See the different ways to achieve that in the sections above (i.e. using Docker Toolbox with `local.dockertoolbox.tiangolo.com`, using `localhost.tiangolo.com` or using `dev.fastapi-app.com`).
 
@@ -429,7 +435,7 @@ and check all the corresponding available URLs in the section at the end.
 
 ---
 
-# 3. Frontend development
+# 4. Frontend development
 ## a. Start development
 - Enter the `frontend` directory:
 ```bash
@@ -466,7 +472,7 @@ If you wish to remove in favour of other frontends:
 
 ---
 
-# 4. Deployment
+# 5. Deployment
 
 _**Note**: Consult the [official docs for Deployment](https://fastapi.tiangolo.com/deployment/docker/#replication-number-of-processes) first._
 
@@ -704,7 +710,7 @@ GitLab CI is configured assuming 2 environments following GitLab flow:
 
 ---
 
-# 5. Docker Compose files and env vars
+# 6. Docker Compose files and env vars
 
 - Main `docker-compose.yml` file contains all configurations for the whole stack.
 - `docker-compose.override.yml` gives overrides for development, e.g. volume mount source code. It is used automatically by `docker-compose`, applying overrides on top of `docker-compose.yml` (merging `yaml`).
@@ -720,7 +726,7 @@ GitLab CI is configured assuming 2 environments following GitLab flow:
 
 ---
 
-# 6. URLs
+# 7. URLs
 
 These are the URLs that will be used and generated by the project.
 
@@ -784,7 +790,7 @@ These are the URLs that will be used and generated by the project.
 
 ---
 
-# 7. Project generation and updating, or re-generating
+# 8. Project generation and updating, or re-generating
 ## a. cookiecutter
 
 This project was generated using https://github.com/tiangolo/full-stack-fastapi-postgresql with:
