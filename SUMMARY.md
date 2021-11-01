@@ -371,6 +371,32 @@ wca.dZiLurhW | t         | t            |
 **Note**: This is simply a hash for "123456" for development purposes.
 
 ## i. Working with queue
+- `celery` handler and tasks are defined in `app/worker.py` for the moment. It might make sense to split it into 2 files: one only containing the celery handler and configs, the other with all the declared tasks to be invoked by controller.
+- Queue using `celery` is configured with `redis` pub/sub and backend for persistence. To inspect the queue, cli into `redis` container (service `queue`, as declared in `docker-compose.yml`):
+```console
+$ docker-compose exec queue redis-cli
+```
+- To view task's results, get the specific task using `GET` (simple key - string value mapping):
+```
+127.0.0.1:6379> KEYS **
+ 1) "_kombu.binding.celery.pidbox"
+ 2) "celery-task-meta-c4f0990d-8d13-4848-8f5f-39be4e07c5ad"
+ 3) "celery-task-meta-04db80d2-9994-4058-8d41-8875c50534dd"
+ 4) "celery-task-meta-5a9d9666-9049-4a78-b02a-b514236d5265"
+ 5) "celery-task-meta-01e16094-76b3-418f-a80a-9f6a2b76c400"
+ 6) "celery-task-meta-456c7a24-297a-4e0e-bef5-34cb6b3643e4"
+ 7) "_kombu.binding.celery"
+ 8) "celery"
+ 9) "_kombu.binding.main-queue"
+10) "_kombu.binding.celeryev"
+
+127.0.0.1:6379> GET celery-task-meta-c4f0990d-8d13-4848-8f5f-39be4e07c5ad
+"{\"status\": \"SUCCESS\", \"result\": \"test task return test fr vue again\", \"traceback\": null, \"children\": [], \"date_done\": \"2021-11-01T09:14:34.166946\", \"task_id\": \"c4f0990d-8d13-4848-8f5f-39be4e07c5ad\"}"
+```
+- To inspect queued (but not picked up by `celery`) tasks, use list retrieval for `celery` key:
+```console
+127.0.0.1:6379> LRANGE celery 1 10
+```
 
 # 3. Development domain name
 
