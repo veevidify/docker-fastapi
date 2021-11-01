@@ -14,6 +14,4 @@ export interface MainState {
     dashboardMiniDrawer: boolean;
     dashboardShowDrawer: boolean;
     notifications: AppNotification[];
-    currentTask: IMsg;
-    taskResult: ITaskPayload | null;
 }

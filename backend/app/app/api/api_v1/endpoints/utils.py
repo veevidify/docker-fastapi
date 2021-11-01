@@ -20,6 +20,7 @@ def test_celery(
     """
     Test Celery worker.
     """
+    print("recv")
     handle: AsyncResult = celery_app.send_task("app.worker.run_task", args=[msg.msg])
     return {"msg": "Word received", "task_id": handle.task_id}
 

@@ -5,6 +5,8 @@ import { AdminState } from './state';
 
 const defaultState: AdminState = {
   users: [],
+  currentTask: { msg: '' },
+  taskResult: null,
 };
 
 export const adminModule = {

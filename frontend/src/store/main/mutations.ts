@@ -29,19 +29,6 @@ export const mutations = {
     removeNotification(state: MainState, payload: AppNotification) {
         state.notifications = state.notifications.filter((notification) => notification !== payload);
     },
-    setCurrentTask(state: MainState, payload: IMsg) {
-        state.currentTask = payload;
-    },
-    updateTaskId(state: MainState, payload: IMsg & WithTaskId) {
-        state.taskResult = {
-            task_id: payload.task_id,
-            task_status: 'pending',
-            task_result: 'pending',
-        };
-    },
-    updateTaskResult(state: MainState, payload: ITaskPayload | null) {
-        state.taskResult = payload;
-    },
 };
 
 const {commit} = getStoreAccessors<MainState | any, State>('');
@@ -54,6 +41,3 @@ export const commitSetToken = commit(mutations.setToken);
 export const commitSetUserProfile = commit(mutations.setUserProfile);
 export const commitAddNotification = commit(mutations.addNotification);
 export const commitRemoveNotification = commit(mutations.removeNotification);
-export const commitSetCurrentTask = commit(mutations.setCurrentTask);
-export const commitUpdateTaskId = commit(mutations.updateTaskId);
-export const commitUpdateTaskResult = commit(mutations.updateTaskResult);

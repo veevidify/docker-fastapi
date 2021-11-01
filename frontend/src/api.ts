@@ -44,10 +44,10 @@ export const api = {
       token,
     });
   },
-  async queueTask(taskParam: IMsg) {
-    return axios.post<IMsg & WithTaskId>(`${apiPrefix}/utils/queue-celery-task/`, taskParam);
+  async queueTask(taskParam: IMsg, token: string) {
+    return axios.post<IMsg & WithTaskId>(`${apiPrefix}/utils/queue-celery-task/`, taskParam, authHeaders(token));
   },
-  async getTaskStatus(taskId: string) {
-    return axios.get<ITaskPayload>(`${apiPrefix}/utils/task-status/${taskId}`);
+  async getTaskStatus(taskId: string, token: string) {
+    return axios.get<ITaskPayload>(`${apiPrefix}/utils/task-status/${taskId}`, authHeaders(token));
   },
 };
