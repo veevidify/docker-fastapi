@@ -38,6 +38,18 @@
           </v-list-tile>
         </v-list>
         <v-divider></v-divider>
+        <v-list>
+          <v-subheader>Live</v-subheader>
+          <v-list-tile to="/main/live/chat">
+            <v-list-tile-action>
+              <v-icon>forum</v-icon>
+            </v-list-tile-action>
+            <v-list-tile-content>
+              <v-list-tile-title>Chat</v-list-tile-title>
+            </v-list-tile-content>
+          </v-list-tile>
+        </v-list>
+        <v-divider></v-divider>
         <v-list subheader v-show="hasAdminAccess">
           <v-subheader>Admin</v-subheader>
           <v-list-tile to="/main/admin/users/all">

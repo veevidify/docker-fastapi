@@ -59,6 +59,17 @@ export default new Router({
               ],
             },
             {
+              path: 'live',
+              component: RouterComponent,
+              redirect: 'dashboard',
+              children: [
+                {
+                  path: 'chat',
+                  component: () => import(/* webpackChunkName: "main-live-chat" */ './views/main/live/Chat.vue'),
+                },
+              ],
+            },
+            {
               path: 'admin',
               component: () => import(/* webpackChunkName: "main-admin" */ './views/main/admin/Admin.vue'),
               redirect: 'admin/users/all',
@@ -88,7 +99,7 @@ export default new Router({
                   path: 'tasks/queue-task',
                   name: 'main-admin-tasks-queue',
                   component: () => import(
-                    /* webpackChunkName: "main-admin-users-create" */ './views/main/admin/QueueTask.vue'),
+                    /* webpackChunkName: "main-admin-task-queue" */ './views/main/admin/QueueTask.vue'),
                 },
               ],
             },
