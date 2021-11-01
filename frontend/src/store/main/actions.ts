@@ -12,8 +12,12 @@ import {
     commitSetLogInError,
     commitSetToken,
     commitSetUserProfile,
+    commitUpdateTaskId,
+    commitSetCurrentTask,
+    commitUpdateTaskResult,
 } from './mutations';
 import { AppNotification, MainState } from './state';
+import { IMsg, WithTaskId } from '@/interfaces';
 
 type MainContext = ActionContext<MainState, State>;
 
@@ -113,6 +117,46 @@ export const actions = {
         if (router.currentRoute.path === '/login' || router.currentRoute.path === '/') {
             router.push('/main');
         }
+    },
+    // send to enqueue the task, receive id, update state
+    async actionSendTaskForQueue(context: MainContext, payload: IMsg) {
+        commitSetCurrentTask(context, payload);
+        try {
+            const taskHandle = await api.queueTask(payload);
+            const data = taskHandle.data;
+            commitUpdateTaskId(context, data);
+        } catch (e) {
+            const err = { msg: e, task_id: e };
+            commitUpdateTaskId(context, err);
+        }
+    },
+    // using state's current task id to poll result
+    async actionPollTaskResult(context: MainContext, payload: WithTaskId) {
+        const currentTaskMsg = context.state.currentTask.msg;
+        const currentTaskId = context.state.taskResult?.task_id || '';
+        if (! currentTaskId) {
+            const err = { msg: 'No task_id' , task_id: currentTaskId };
+            commitUpdateTaskId(context, err);
+        } else {
+            try {
+                const resultData = await api.getTaskStatus(currentTaskId);
+                const { data } = resultData;
+
+                commitUpdateTaskResult(context, data);
+            } catch (e) {
+                const err = {
+                    task_id: currentTaskId,
+                    task_result: e,
+                    task_status: 'failed',
+                };
+                commitUpdateTaskResult(context, err);
+            }
+        }
+    },
+    // remove current task's info to refresh the view
+    async actionClearCurrentTask(context: MainContext) {
+        commitSetCurrentTask(context, { msg: '' });
+        commitUpdateTaskResult(context, null);
     },
     async removeNotification(context: MainContext, payload: { notification: AppNotification, timeout: number }) {
         return new Promise((resolve, reject) => {

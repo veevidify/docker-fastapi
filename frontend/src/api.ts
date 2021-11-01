@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { apiUrl } from '@/env';
-import { IUserProfile, IUserProfileUpdate, IUserProfileCreate, ITaskParam } from './interfaces';
+import { IUserProfile, IUserProfileUpdate, IUserProfileCreate, IMsg, WithTaskId, ITaskPayload } from './interfaces';
 
 function authHeaders(token: string) {
   return {
@@ -44,7 +44,10 @@ export const api = {
       token,
     });
   },
-  async queueTask(taskParam: ITaskParam) {
-    return axios.post(`${apiPrefix}/utils/queue-celery-task/`, taskParam);
+  async queueTask(taskParam: IMsg) {
+    return axios.post<IMsg & WithTaskId>(`${apiPrefix}/utils/queue-celery-task/`, taskParam);
+  },
+  async getTaskStatus(taskId: string) {
+    return axios.get<ITaskPayload>(`${apiPrefix}/utils/task-status/${taskId}`);
   },
 };
