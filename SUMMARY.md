@@ -17,13 +17,15 @@
     - [Packages](#packages)
   - [g. Migrations](#g-migrations)
   - [h. Working with db](#h-working-with-db)
-  - [i. Development in `localhost` with a custom domain](#i-development-in-localhost-with-a-custom-domain)
-  - [j. Development with a custom IP](#j-development-with-a-custom-ip)
-  - [k. Change the development "domain" name](#k-change-the-development-domain-name)
-- [3. Frontend development](#3-frontend-development)
+  - [i. Working with queue](#i-working-with-queue)
+- [3. Development domain name](#3-development-domain-name)
+  - [a. Development in `localhost` with a custom domain](#a-development-in-localhost-with-a-custom-domain)
+  - [b. Development with a custom IP](#b-development-with-a-custom-ip)
+  - [c. Change the development "domain" name](#c-change-the-development-domain-name)
+- [4. Frontend development](#4-frontend-development)
   - [a. Start development](#a-start-development)
   - [b. (Optional) Removing frontend](#b-optional-removing-frontend)
-- [4. Deployment](#4-deployment)
+- [5. Deployment](#5-deployment)
   - [a. Traefik network](#a-traefik-network)
   - [b. Persisting Docker named volumes](#b-persisting-docker-named-volumes)
     - [Adding services with volumes](#adding-services-with-volumes)
@@ -33,16 +35,16 @@
     - [Procedure](#procedure)
     - [Deployment Technical Details](#deployment-technical-details)
   - [d. Continuous Integration / Continuous Delivery](#d-continuous-integration--continuous-delivery)
-- [5. Docker Compose files and env vars](#5-docker-compose-files-and-env-vars)
+- [6. Docker Compose files and env vars](#6-docker-compose-files-and-env-vars)
   - [The .env file](#the-env-file)
-- [6. URLs](#6-urls)
+- [7. URLs](#7-urls)
   - [a. Production URLs](#a-production-urls)
   - [b. Staging URLs](#b-staging-urls)
   - [c. Development URLs](#c-development-urls)
   - [d. Development with Docker Toolbox URLs](#d-development-with-docker-toolbox-urls)
   - [e. Development with a custom IP URLs](#e-development-with-a-custom-ip-urls)
   - [f. Development in localhost with a custom domain URLs](#f-development-in-localhost-with-a-custom-domain-urls)
-- [7. Project generation and updating, or re-generating](#7-project-generation-and-updating-or-re-generating)
+- [8. Project generation and updating, or re-generating](#8-project-generation-and-updating-or-re-generating)
   - [a. cookiecutter](#a-cookiecutter)
   - [b. Input options generating project template](#b-input-options-generating-project-template)
 
@@ -121,6 +123,8 @@ $ poetry shell
 ```console
 $ poetry update
 ```
+
+_**Note**: It's important to note that poetry commands should be invoked from the host, within backend/app folder, instead of from within docker container service, in order to avoid conflicts._
 
 ## b. Structures
 - SQLAlchemy models: `./backend/app/app/models/`
@@ -366,13 +370,43 @@ wca.dZiLurhW | t         | t            |
 ```
 **Note**: This is simply a hash for "123456" for development purposes.
 
-## i. Development in `localhost` with a custom domain
+## i. Working with queue
+- `celery` handler and tasks are defined in `app/worker.py` for the moment. It might make sense to split it into 2 files: one only containing the celery handler and configs, the other with all the declared tasks to be invoked by controller.
+- Queue using `celery` is configured with `redis` pub/sub and backend for persistence. To inspect the queue, cli into `redis` container (service `queue`, as declared in `docker-compose.yml`):
+```console
+$ docker-compose exec queue redis-cli
+```
+- To view task's results, get the specific task using `GET` (simple key - string value mapping):
+```
+127.0.0.1:6379> KEYS **
+ 1) "_kombu.binding.celery.pidbox"
+ 2) "celery-task-meta-c4f0990d-8d13-4848-8f5f-39be4e07c5ad"
+ 3) "celery-task-meta-04db80d2-9994-4058-8d41-8875c50534dd"
+ 4) "celery-task-meta-5a9d9666-9049-4a78-b02a-b514236d5265"
+ 5) "celery-task-meta-01e16094-76b3-418f-a80a-9f6a2b76c400"
+ 6) "celery-task-meta-456c7a24-297a-4e0e-bef5-34cb6b3643e4"
+ 7) "_kombu.binding.celery"
+ 8) "celery"
+ 9) "_kombu.binding.main-queue"
+10) "_kombu.binding.celeryev"
+
+127.0.0.1:6379> GET celery-task-meta-c4f0990d-8d13-4848-8f5f-39be4e07c5ad
+"{\"status\": \"SUCCESS\", \"result\": \"test task return test fr vue again\", \"traceback\": null, \"children\": [], \"date_done\": \"2021-11-01T09:14:34.166946\", \"task_id\": \"c4f0990d-8d13-4848-8f5f-39be4e07c5ad\"}"
+```
+- To inspect queued (but not picked up by `celery`) tasks, use list retrieval for `celery` key:
+```console
+127.0.0.1:6379> LRANGE celery 1 10
+```
+
+# 3. Development domain name
+
+## a. Development in `localhost` with a custom domain
 - With hostname/CORS/cookies issues, you can use `localhost.tiangolo.com`, it is set up to point to `localhost` (to the IP `127.0.0.1`) and all subdomains.
 - `localhost.tiangolo.com` was configured to be allowed. Otherwise, add it to the list in the variable `BACKEND_CORS_ORIGINS` in the `.env` file.
 - To configure it in your stack, follow **Change the development "domain"** below, using domain `localhost.tiangolo.com`.
 - You should be able to open: http://localhost.tiangolo.com, it will be server by your stack in `localhost`.
 
-## j. Development with a custom IP
+## b. Development with a custom IP
 - If you are running Docker in an IP address different than `127.0.0.1` (`localhost`) and `192.168.99.100` (the default of Docker Toolbox), you will need to use a fake local domain (`dev.fastapi-app.com`) and make your computer think that the domain is is served by the custom IP (e.g. `192.168.99.150`).
 - `dev.fastapi-app.com` was configured to be allowed. If you want a custom one, add it to the list in the variable `BACKEND_CORS_ORIGINS` in the `.env` file.
 - Open `/etc/hosts`, added line might look like:
@@ -383,7 +417,7 @@ wca.dZiLurhW | t         | t            |
 
 - You should be able to open: http://dev.fastapi-app.com, it will be server by your stack in `localhost`.
 
-## k. Change the development "domain" name
+## c. Change the development "domain" name
 
 If you need to use your local stack with a different domain than `localhost`, you need to make sure the domain you use points to the IP where your stack is set up. See the different ways to achieve that in the sections above (i.e. using Docker Toolbox with `local.dockertoolbox.tiangolo.com`, using `localhost.tiangolo.com` or using `dev.fastapi-app.com`).
 
@@ -427,7 +461,7 @@ and check all the corresponding available URLs in the section at the end.
 
 ---
 
-# 3. Frontend development
+# 4. Frontend development
 ## a. Start development
 - Enter the `frontend` directory:
 ```bash
@@ -464,7 +498,7 @@ If you wish to remove in favour of other frontends:
 
 ---
 
-# 4. Deployment
+# 5. Deployment
 
 _**Note**: Consult the [official docs for Deployment](https://fastapi.tiangolo.com/deployment/docker/#replication-number-of-processes) first._
 
@@ -702,7 +736,7 @@ GitLab CI is configured assuming 2 environments following GitLab flow:
 
 ---
 
-# 5. Docker Compose files and env vars
+# 6. Docker Compose files and env vars
 
 - Main `docker-compose.yml` file contains all configurations for the whole stack.
 - `docker-compose.override.yml` gives overrides for development, e.g. volume mount source code. It is used automatically by `docker-compose`, applying overrides on top of `docker-compose.yml` (merging `yaml`).
@@ -718,7 +752,7 @@ GitLab CI is configured assuming 2 environments following GitLab flow:
 
 ---
 
-# 6. URLs
+# 7. URLs
 
 These are the URLs that will be used and generated by the project.
 
@@ -782,7 +816,7 @@ These are the URLs that will be used and generated by the project.
 
 ---
 
-# 7. Project generation and updating, or re-generating
+# 8. Project generation and updating, or re-generating
 ## a. cookiecutter
 
 This project was generated using https://github.com/tiangolo/full-stack-fastapi-postgresql with:

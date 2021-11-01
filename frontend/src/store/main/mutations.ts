@@ -1,4 +1,4 @@
-import { IUserProfile } from '@/interfaces';
+import { IUserProfile, ITaskPayload, IMsg, WithTaskId } from '@/interfaces';
 import { MainState, AppNotification } from './state';
 import { getStoreAccessors } from 'typesafe-vuex';
 import { State } from '../state';

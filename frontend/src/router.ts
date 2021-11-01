@@ -84,6 +84,12 @@ export default new Router({
                   component: () => import(
                     /* webpackChunkName: "main-admin-users-create" */ './views/main/admin/CreateUser.vue'),
                 },
+                {
+                  path: 'tasks/queue-task',
+                  name: 'main-admin-tasks-queue',
+                  component: () => import(
+                    /* webpackChunkName: "main-admin-users-create" */ './views/main/admin/QueueTask.vue'),
+                },
               ],
             },
           ],

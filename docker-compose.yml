@@ -104,25 +104,37 @@ services:
         - traefik.http.routers.${STACK_NAME?Variable not set}-pgadmin-https.tls.certresolver=le
         - traefik.http.services.${STACK_NAME?Variable not set}-pgadmin.loadbalancer.server.port=5050
 
-  queue:
-    image: rabbitmq:3
+  # queue:
+  #   image: rabbitmq:3
     # Using the below image instead is required to enable the "Broker" tab in the flower UI:
     # image: rabbitmq:3-management
     #
     # You also have to change the flower command
+
+  # use redis backend for queue instead of rabbitmq for result callback
+  queue:
+    image: redis:6-alpine
 
   flower:
     image: mher/flower:0.9.7
     networks:
       - ${TRAEFIK_PUBLIC_NETWORK?Variable not set}
       - default
-    env_file:
-      - .env
-    command:
-      - "--broker=amqp://guest@queue:5672//"
+    # env_file:
+    #   - .env
+    depends_on:
+      - queue
+    environment:
+      - CELERY_BROKER_URL=${BROKER_URL}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+
+    # replacing amqp with redis for persistence
+    command: flower --port=5555 --broker=redis://queue:6379/0
+      # - "--broker=amqp://guest@queue:5672//"
       # For the "Broker" tab to work in the flower UI, uncomment the following command argument,
       # and change the queue service's image as well
       # - "--broker_api=http://guest:guest@queue:15672/api//"
+
     deploy:
       labels:
         - traefik.enable=true
@@ -148,6 +160,8 @@ services:
       - SERVER_HOST=https://${DOMAIN?Variable not set}
       # Allow explicit env var override for tests
       - SMTP_HOST=${SMTP_HOST}
+      - BROKER_URL=${BROKER_URL}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
     build:
       context: ./backend
       dockerfile: backend.dockerfile
@@ -172,6 +186,8 @@ services:
       - SERVER_HOST=https://${DOMAIN?Variable not set}
       # Allow explicit env var override for tests
       - SMTP_HOST=${SMTP_HOST?Variable not set}
+      - BROKER_URL=${BROKER_URL?Variable not set}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND?Variable not set}
     build:
       context: ./backend
       dockerfile: celeryworker.dockerfile

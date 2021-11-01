@@ -10,9 +10,13 @@ export const getters = {
             return { ...filteredUsers[0] };
         }
     },
+    currentTask: (state: AdminState) => state.currentTask,
+    taskResult: (state: AdminState) => state.taskResult,
 };
 
 const { read } = getStoreAccessors<AdminState, State>('');
 
 export const readAdminOneUser = read(getters.adminOneUser);
 export const readAdminUsers = read(getters.adminUsers);
+export const readCurrentTask = read(getters.currentTask);
+export const readTaskResult = read(getters.taskResult);

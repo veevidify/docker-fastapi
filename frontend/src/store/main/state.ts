@@ -1,4 +1,4 @@
-import { IUserProfile } from '@/interfaces';
+import { IUserProfile, IMsg, ITaskPayload } from '@/interfaces';
 
 export interface AppNotification {
     content: string;

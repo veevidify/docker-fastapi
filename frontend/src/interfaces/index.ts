@@ -21,3 +21,18 @@ export interface IUserProfileCreate {
     is_active?: boolean;
     is_superuser?: boolean;
 }
+
+export interface IMsg {
+    msg: string;
+}
+
+export interface WithTaskId {
+    task_id: string;
+}
+
+export interface ITaskStatus {
+    task_status: string;
+    task_result: string;
+}
+
+export type ITaskPayload = ITaskStatus & WithTaskId;

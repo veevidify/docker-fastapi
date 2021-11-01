@@ -56,6 +56,14 @@
               <v-list-tile-title>Create User</v-list-tile-title>
             </v-list-tile-content>
           </v-list-tile>
+          <v-list-tile to="/main/admin/tasks/queue-task">
+            <v-list-tile-action>
+              <v-icon>add_task</v-icon>
+            </v-list-tile-action>
+            <v-list-tile-content>
+              <v-list-tile-title>Queue Task</v-list-tile-title>
+            </v-list-tile-content>
+          </v-list-tile>
         </v-list>
         <v-spacer></v-spacer>
         <v-list>
