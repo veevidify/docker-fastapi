@@ -53,3 +53,18 @@
   </v-container>
 </template>
 
+<script lang="ts">
+import { Component, Vue } from 'vue-property-decorator';
+import wsPlugin, { WSListeners } from '@/plugins/socketClient';
+import { commitAddNotification, commitRemoveNotification } from '@/store/main/mutations';
+
+@Component
+export default class LiveChat extends Vue {
+  // implement listeners to interact with store, and with backend via WS, here
+  // open: log event
+  // const listeners: WSListeners = {}
+  // this.$socketClient.setListeners(listeners)
+
+}
+
+</script>
