@@ -2,6 +2,7 @@ from datetime import timedelta
 from typing import Any
 
 from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -34,12 +35,19 @@ def login_access_token(
     elif not crud.user.is_active(user):
         raise HTTPException(status_code=400, detail="Inactive user")
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    return {
-        "access_token": security.create_access_token(
+
+    access_token = security.create_access_token(
             user.id, expires_delta=access_token_expires
-        ),
+        )
+    resp_content = {
+        "access_token": access_token,
         "token_type": "bearer",
     }
+
+    response = JSONResponse(content=resp_content)
+    response.set_cookie(key="token", value=access_token, path="/", expires=access_token_expires)
+
+    return response
 
 
 @router.post("/login/test-token", response_model=schemas.User)

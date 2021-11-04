@@ -1,6 +1,6 @@
-from typing import Generator
+from typing import Generator, Optional
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, WebSocket, Cookie
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from pydantic import ValidationError
@@ -59,3 +59,35 @@ def get_current_active_superuser(
             status_code=400, detail="The user doesn't have enough privileges"
         )
     return current_user
+
+
+# endpoint invocation will check if
+# token/cookie is injected into ws-controller object first
+async def get_authed_user_for_ws(
+    ws: WebSocket,
+    db: Session = Depends(get_db),
+    token: Optional[str] = Cookie(None),
+) -> models.User:
+    if (token is None):
+        await ws.close(code=status.WS_1008_POLICY_VIOLATION)
+        raise HTTPException(status_code=401, detail="Unauthorized.")
+
+    else:
+        token = token
+
+    try:
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]
+        )
+        token_data = schemas.TokenPayload(**payload)
+
+    except (jwt.JWTError, ValidationError):
+        await ws.close(code=status.WS_1008_POLICY_VIOLATION)
+        raise HTTPException(status_code=401, detail="Unauthorized.")
+
+    user = crud.user.get(db, id=token_data.sub)
+    if not user:
+        await ws.close(code=status.WS_1008_POLICY_VIOLATION)
+        raise HTTPException(status_code=401, detail="Unauthorized.")
+
+    return user

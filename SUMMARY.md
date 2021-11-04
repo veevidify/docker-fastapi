@@ -18,13 +18,15 @@
   - [g. Migrations](#g-migrations)
   - [h. Working with db](#h-working-with-db)
   - [i. Working with queue](#i-working-with-queue)
+  - [k. Working with websocket](#k-working-with-websocket)
 - [3. Development domain name](#3-development-domain-name)
   - [a. Development in `localhost` with a custom domain](#a-development-in-localhost-with-a-custom-domain)
   - [b. Development with a custom IP](#b-development-with-a-custom-ip)
   - [c. Change the development "domain" name](#c-change-the-development-domain-name)
 - [4. Frontend development](#4-frontend-development)
   - [a. Start development](#a-start-development)
-  - [b. (Optional) Removing frontend](#b-optional-removing-frontend)
+  - [b. WebSocket and CORS gotcha](#b-websocket-and-cors-gotcha)
+  - [c. (Optional) Removing frontend](#c-optional-removing-frontend)
 - [5. Deployment](#5-deployment)
   - [a. Traefik network](#a-traefik-network)
   - [b. Persisting Docker named volumes](#b-persisting-docker-named-volumes)
@@ -398,6 +400,16 @@ $ docker-compose exec queue redis-cli
 127.0.0.1:6379> LRANGE celery 1 10
 ```
 
+## k. Working with websocket
+- Websocket support is already built into FastAPI core. Logging from websocket requests is also standard, just like other (HTTP) API routes.
+- For authorization, since native browser WebSocket does not support any standard authorization headers, we make use of cookies. Upon logging in, the backend will respond with a `set-cookie` response header, directing the browser to persist this token:
+```py
+# api.api_v1.endpoints.login
+    response.set_cookie(key="token", value=access_token, path="/", expires=access_token_expires)
+```
+- Then this `token` cookie will automatically be attached to the WS request from frontend.
+- Read further below in 4. Frontend > WebSocket and CORS gotcha.
+
 # 3. Development domain name
 
 ## a. Development in `localhost` with a custom domain
@@ -485,7 +497,12 @@ to:
 VUE_APP_ENV=staging
 ```
 
-## b. (Optional) Removing frontend
+## b. WebSocket and CORS gotcha
+- If you went with the default development environment, with Vue at `localhost:8080` and FastAPI at `localhost`, you will run into CORS issues with `set-cookie`.
+- Specifically, `set-cookie` directs the browser to set one at `localhost:8080`, then afterwards, WebSocket connection is calling `localhost`, for which the browser will not provide the `token` for.
+- The work around for development is obtain a valid token, e.g. via Swagger, then manually set it in browser for `localhost`, or launch the Vue app at `localhost` (online via docker service) and login normally, which will make browser persist a `token` for `localhost` instead of `localhost:8080` via `set-cookie` response header, which makes other requests to api/ws at `localhost` from Vue include this `token` cookie.
+
+## c. (Optional) Removing frontend
 If you wish to remove in favour of other frontends:
 - Remove the `./frontend` directory.
 - In the `docker-compose.yml` file, remove the whole service / section `frontend`.
