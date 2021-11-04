@@ -96,39 +96,18 @@ class WSClient {
     this.url = url;
   }
 
+  // component will call set & apply listeners
   public setListeners(listeners: WSListeners) {
     this.listeners = listeners;
+
+    this.applyListenersToWsInstance(this.listeners);
   }
 
   // == lifecycle == //
 
+  // connect will be called first, ideally when installing plugin
   public connect() {
     this.wsInstance = new WebSocket(this.url);
-    if (! this.listeners) {
-      throw ERR_NO_WS_LISTENERS;
-    }
-
-    // WebSocket's even listeners
-    this.wsInstance.onopen = (event: Event) => {
-      this.listeners!.onOpen(event);
-    };
-
-    this.wsInstance.onmessage = (msgEvent: MessageEvent) => {
-      const msg = msgEvent.data;
-      this.listeners!.onMsg(msg, msgEvent);
-    };
-
-    this.wsInstance.onclose = (event: CloseEvent) => {
-      this.listeners!.onClose(event);
-
-      if (! event.wasClean && this.opts.autoRecon) {
-        this.reconnect();
-      }
-    };
-
-    this.wsInstance.onerror = (event: Event) => {
-      this.listeners!.onError(ERR_SEND, event);
-    };
   }
 
   public reconnect() {
@@ -161,12 +140,38 @@ class WSClient {
   public cleanup() {
     this.opts = this.defaultOptions();
 
-    delete this.listeners;
-    this.listeners = this.noopListeners();
-
     clearTimeout(this.timeoutHandler);
-
+    delete this.listeners;
     delete this.wsInstance;
+  }
+
+  // internal use, invoked subsequently after setListeners is invoked publicly
+  private applyListenersToWsInstance(listeners: WSListeners) {
+    if (! this.wsInstance) {
+      return;
+    }
+
+    // WebSocket's even listeners
+    this.wsInstance.onopen = (event: Event) => {
+      listeners.onOpen(event);
+    };
+
+    this.wsInstance.onmessage = (msgEvent: MessageEvent) => {
+      const msg = msgEvent.data;
+      listeners.onMsg(msg, msgEvent);
+    };
+
+    this.wsInstance.onclose = (event: CloseEvent) => {
+      listeners.onClose(event);
+
+      if (! event.wasClean && this.opts.autoRecon) {
+        this.reconnect();
+      }
+    };
+
+    this.wsInstance.onerror = (event: Event) => {
+      listeners.onError(ERR_SEND, event);
+    };
   }
 }
 

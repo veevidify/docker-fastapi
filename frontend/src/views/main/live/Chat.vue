@@ -57,6 +57,7 @@
 import { Component, Vue } from 'vue-property-decorator';
 import wsPlugin, { WSListeners } from '@/plugins/socketClient';
 import { commitAddNotification, commitRemoveNotification } from '@/store/main/mutations';
+import { IWSMessage } from '@/interfaces';
 
 @Component
 export default class LiveChat extends Vue {
@@ -68,7 +69,7 @@ export default class LiveChat extends Vue {
   public valid: boolean = true;
   public messages = [
     {
-      id: '1',
+      id: 1,
       from: 'App',
       message: 'Welcome to Live Chat',
     },
@@ -89,19 +90,30 @@ export default class LiveChat extends Vue {
       this.connectionStatus = 'error';
     },
     onMsg: (msg: string, event: MessageEvent) => {
-      const decodedMsg = JSON.parse(msg);
-      console.log(decodedMsg);
-      this.messages.push();
+      const decodedMsg: IWSMessage = JSON.parse(msg);
+      const msgObj = {
+        id: this.messages.slice(-1)[0].id + 1,
+        from: decodedMsg.by,
+        message: decodedMsg.message,
+      };
+      this.messages.push(msgObj);
     },
   };
 
   public async mounted() {
     this.$socketClient.setListeners(this.listeners);
-    this.$socketClient.connect();
   }
 
   public send() {
-    console.log('== send msg: ', this.currentMessage);
+    // console.log('== send msg: ', this.currentMessage);
+    if (this.currentMessage !== '') {
+      this.$socketClient.sendMsg(this.currentMessage);
+    }
+    this.currentMessage = '';
+  }
+
+  public unmounted() {
+    this.$socketClient.cleanup();
   }
 }
 
