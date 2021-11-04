@@ -1,40 +1,80 @@
-# FastAPI Template
+# Contents
+- [Contents](#contents)
+- [1. Prerequisites and installation:](#1-prerequisites-and-installation)
+  - [a. Workflow](#a-workflow)
+  - [b. URLs:](#b-urls)
+- [2. Backend local dev env](#2-backend-local-dev-env)
+  - [a. General workflow](#a-general-workflow)
+  - [b. Structures](#b-structures)
+  - [c. Docker Compose Override](#c-docker-compose-override)
+  - [d. REPL](#d-repl)
+  - [e. Backend tests](#e-backend-tests)
+    - [Test running stack](#test-running-stack)
+    - [Local tests](#local-tests)
+    - [Test Coverage](#test-coverage)
+  - [f. Development with Jupyter Notebooks](#f-development-with-jupyter-notebooks)
+    - [Environment](#environment)
+    - [Packages](#packages)
+  - [g. Migrations](#g-migrations)
+  - [h. Working with db](#h-working-with-db)
+  - [i. Working with queue](#i-working-with-queue)
+  - [k. Working with websocket](#k-working-with-websocket)
+- [3. Development domain name](#3-development-domain-name)
+  - [a. Development in `localhost` with a custom domain](#a-development-in-localhost-with-a-custom-domain)
+  - [b. Development with a custom IP](#b-development-with-a-custom-ip)
+  - [c. Change the development "domain" name](#c-change-the-development-domain-name)
+- [4. Frontend development](#4-frontend-development)
+  - [a. Start development](#a-start-development)
+  - [b. WebSocket and CORS gotcha](#b-websocket-and-cors-gotcha)
+  - [c. (Optional) Removing frontend](#c-optional-removing-frontend)
+- [5. Deployment](#5-deployment)
+  - [a. Traefik network](#a-traefik-network)
+  - [b. Persisting Docker named volumes](#b-persisting-docker-named-volumes)
+    - [Adding services with volumes](#adding-services-with-volumes)
+    - [docker-auto-labels](#docker-auto-labels)
+    - [(Optionally) adding labels manually](#optionally-adding-labels-manually)
+  - [c. Deploy to a Docker Swarm mode cluster](#c-deploy-to-a-docker-swarm-mode-cluster)
+    - [Procedure](#procedure)
+    - [Deployment Technical Details](#deployment-technical-details)
+  - [d. Continuous Integration / Continuous Delivery](#d-continuous-integration--continuous-delivery)
+- [6. Docker Compose files and env vars](#6-docker-compose-files-and-env-vars)
+  - [The .env file](#the-env-file)
+- [7. URLs](#7-urls)
+  - [a. Production URLs](#a-production-urls)
+  - [b. Staging URLs](#b-staging-urls)
+  - [c. Development URLs](#c-development-urls)
+  - [d. Development with Docker Toolbox URLs](#d-development-with-docker-toolbox-urls)
+  - [e. Development with a custom IP URLs](#e-development-with-a-custom-ip-urls)
+  - [f. Development in localhost with a custom domain URLs](#f-development-in-localhost-with-a-custom-domain-urls)
+- [8. Project generation and updating, or re-generating](#8-project-generation-and-updating-or-re-generating)
+  - [a. cookiecutter](#a-cookiecutter)
+  - [b. Input options generating project template](#b-input-options-generating-project-template)
 
-## Backend Requirements
+---
+_**Disclaimer**: This file is a summarised version of `README.md`_
 
-* [Docker](https://www.docker.com/).
+---
+
+# 1. Prerequisites and installation:
 * [Docker Compose](https://docs.docker.com/compose/install/).
 * [Poetry](https://python-poetry.org/) for Python package and environment management.
+* Node.js (with `npm`) for Frontend.
 
-## Frontend Requirements
-
-* Node.js (with `npm`).
-
-## Backend local development
-
-* Start the stack with Docker Compose:
+## a. Workflow
+Start the stack with Docker Compose:
 
 ```bash
 docker-compose up -d
 ```
 
-* Now you can open your browser and interact with these URLs:
-
-Frontend, built with Docker, with routes handled based on the path: http://localhost
-
-Backend, JSON based web API based on OpenAPI: http://localhost/api/
-
-Automatic interactive documentation with Swagger UI (from the OpenAPI backend): http://localhost/docs
-
-Alternative automatic documentation with ReDoc (from the OpenAPI backend): http://localhost/redoc
-
-PGAdmin, PostgreSQL web administration: http://localhost:5050
-
-Flower, administration of Celery tasks: http://localhost:5555
-
-Traefik UI, to see how the routes are being handled by the proxy: http://localhost:8090
-
-**Note**: The first time you start your stack, it might take a minute for it to be ready. While the backend waits for the database to be ready and configures everything. You can check the logs to monitor it.
+## b. URLs:
+- Frontend: http://localhost
+- Backend API: http://localhost/api/
+- Swagger UI: http://localhost/docs
+- Alternative doc (ReDoc): http://localhost/redoc
+- PGAdmin (for Postgres): http://localhost:5050
+- Flower (for Celery tasks): http://localhost:5555
+- Traefik dashboard, for proxy info: http://localhost:8090
 
 To check the logs, run:
 
@@ -48,163 +88,166 @@ To check the logs of a specific service, add the name of the service, e.g.:
 docker-compose logs backend
 ```
 
-If your Docker is not running in `localhost` (the URLs above wouldn't work) check the sections below on **Development with Docker Toolbox** and **Development with a custom IP**.
+---
 
-## Backend local development, additional details
+# 2. Backend local dev env
 
-### General workflow
+## a. General workflow
 
-By default, the dependencies are managed with [Poetry](https://python-poetry.org/), go there and install it.
-
-From `./backend/app/` you can install all the dependencies with:
-
+- Install [Poetry](https://python-poetry.org/).
+- Dependencies:
+```console
+$ cd `backend/app/`
+```
+- Make sure `poetry.toml` has the right config (not modified):
+```console
+$ cat poetry.toml
+```
+Output:
+```console
+[virtualenvs]
+create = true
+in-project = true
+```
+- Get packages
 ```console
 $ poetry install
 ```
 
-Then you can start a shell session with the new environment with:
+- Start a shell session (venv):
 
 ```console
 $ poetry shell
 ```
+- In your editor, point python interpreter and environment to the one `poetry` created, e.g. `./backend/app/.venv/bin/python3.8`
 
-Next, open your editor at `./backend/app/` (instead of the project root: `./`), so that you see an `./app/` directory with your code inside. That way, your editor will be able to find all the imports, etc. Make sure your editor uses the environment you just created with Poetry.
+- If new packages added to `pyproject.toml`, run update to resolve dependencies and create new lockfile:
+```console
+$ poetry update
+```
 
-Modify or add SQLAlchemy models in `./backend/app/app/models/`, Pydantic schemas in `./backend/app/app/schemas/`, API endpoints in `./backend/app/app/api/`, CRUD (Create, Read, Update, Delete) utils in `./backend/app/app/crud/`. The easiest might be to copy the ones for Items (models, endpoints, and CRUD utils) and update them to your needs.
+_**Note**: It's important to note that poetry commands should be invoked from the host, within backend/app folder, instead of from within docker container service, in order to avoid conflicts._
 
-Add and modify tasks to the Celery worker in `./backend/app/app/worker.py`.
+## b. Structures
+- SQLAlchemy models: `./backend/app/app/models/`
+- Pydantic schemas: `./backend/app/app/schemas/`
+- API endpoints: `./backend/app/app/api/`
+- CRUD utils: `./backend/app/app/crud/`.
+- Celery worker's tasks in `./backend/app/app/worker.py`.
+- Additional packages for worker: `./backend/app/celeryworker.dockerfile`.
 
-If you need to install any additional package to the worker, add it to the file `./backend/app/celeryworker.dockerfile`.
-
-### Docker Compose Override
-
-During development, you can change Docker Compose settings that will only affect the local development environment, in the file `docker-compose.override.yml`.
-
-The changes to that file only affect the local development environment, not the production environment. So, you can add "temporary" changes that help the development workflow.
-
-For example, the directory with the backend code is mounted as a Docker "host volume", mapping the code you change live to the directory inside the container. That allows you to test your changes right away, without having to build the Docker image again. It should only be done during development, for production, you should build the Docker image with a recent version of the backend code. But during development, it allows you to iterate very fast.
-
-There is also a command override that runs `/start-reload.sh` (included in the base image) instead of the default `/start.sh` (also included in the base image). It starts a single server process (instead of multiple, as would be for production) and reloads the process whenever the code changes. Have in mind that if you have a syntax error and save the Python file, it will break and exit, and the container will stop. After that, you can restart the container by fixing the error and running again:
+## c. Docker Compose Override
+- Overrides only take effect for local dev env, to achieve this, modify `docker-compose.override.yml`.
+- E.g., volume mount, allowing changes to be reflected, without having to rebuild Docker image (development only)
+- For prod, build the Docker image, preferably in CI.
+- Command override `/start-reload.sh` in-place of `/start.sh` starts a single server process (instead of multi-threaded, which is suitable for prod). Often the container exits, you have to re-issue command:
 
 ```console
 $ docker-compose up -d
 ```
 
-There is also a commented out `command` override, you can uncomment it and comment the default one. It makes the backend container run a process that does "nothing", but keeps the container alive. That allows you to get inside your running container and execute commands inside, for example a Python interpreter to test installed dependencies, or start the development server that reloads when it detects changes, or start a Jupyter Notebook session.
+- Commented out `command` override. Uncomment it and comment the default one. This makes backend container run a process that does "nothing", but keeps the container alive, allows `exec` into running container, e.g. running python REPL, start-reload, start Jupyter nb, etc.
 
-To get inside the container with a `bash` session you can start the stack with:
+- To achieve this:
 
 ```console
 $ docker-compose up -d
 ```
 
-and then `exec` inside the running container:
+and then:
 
 ```console
 $ docker-compose exec backend bash
 ```
 
-You should see an output like:
+Output:
 
 ```console
 root@7f2607af31c3:/app#
 ```
 
-that means that you are in a `bash` session inside your container, as a `root` user, under the `/app` directory.
-
-There you can use the script `/start-reload.sh` to run the debug live reloading server. You can run that script from inside the container with:
-
-```console
-$ bash /start-reload.sh
-```
-
-...it will look like:
-
+Which allows executing scripts such as:
 ```console
 root@7f2607af31c3:/app# bash /start-reload.sh
 ```
 
-and then hit enter. That runs the live reloading server that auto reloads when it detects code changes.
+- This keeps the container alive instead of exiting.
 
-Nevertheless, if it doesn't detect a change but a syntax error, it will just stop with an error. But as the container is still alive and you are in a Bash session, you can quickly restart it after fixing the error, running the same command ("up arrow" and "Enter").
+## d. REPL
 
-...this previous detail is what makes it useful to have the container alive doing nothing and then, in a Bash session, make it run the live reload server.
+- `ipython` is installed as REPL, to use, cd into backend folder and invoke it:
+```console
+cd backend/app
+ipython
+```
+- In here you can import backend's modules and test snippets/functions:
+```
+ $  ipython
+Python 3.8.0 (default, Feb 25 2021, 22:10:10)
+Type 'copyright', 'credits' or 'license' for more information
+IPython 7.28.0 -- An enhanced Interactive Python. Type '?' for help.
 
-### Backend tests
+In [1]: from fastapi import FastAPI
 
-To test the backend run:
+In [2]: from .app.models.item import Item
+```
+
+## e. Backend tests
+- To test the backend run:
 
 ```console
 $ DOMAIN=backend sh ./scripts/test.sh
 ```
 
-The file `./scripts/test.sh` has the commands to generate a testing `docker-stack.yml` file, start the stack and test it.
+- `./scripts/test.sh` generates a testing `docker-stack.yml` file, which starts the stack and test it.
+- The tests run with Pytest: `./backend/app/app/tests/`.
+- Gitlab CI is included which runs tests.
 
-The tests run with Pytest, modify and add tests to `./backend/app/app/tests/`.
+### Test running stack
+- If stack is up, use:
 
-If you use GitLab CI the tests will run automatically.
+```bash
+docker-compose exec backend /app/tests-start.sh
+```
 
-#### Local tests
-
-Start the stack with this command:
+### Local tests
+- Start the stack:
 
 ```Bash
 DOMAIN=backend sh ./scripts/test-local.sh
 ```
-The `./backend/app` directory is mounted as a "host volume" inside the docker container (set in the file `docker-compose.dev.volumes.yml`).
-You can rerun the test on live code:
+- `./backend/app` will be mounted as "host volume" inside the docker container (set in the file `docker-compose.dev.volumes.yml`).
+- Rerun the test on live code:
 
 ```Bash
 docker-compose exec backend /app/tests-start.sh
 ```
 
-#### Test running stack
-
-If your stack is already up and you just want to run the tests, you can use:
-
-```bash
-docker-compose exec backend /app/tests-start.sh
-```
-
-That `/app/tests-start.sh` script just calls `pytest` after making sure that the rest of the stack is running. If you need to pass extra arguments to `pytest`, you can pass them to that command and they will be forwarded.
-
-For example, to stop on first error:
-
+- `/app/tests-start.sh` simply calls `pytest`. Extra args to `pytest` will be forwarded, e.g., stopping on first error:
 ```bash
 docker-compose exec backend bash /app/tests-start.sh -x
 ```
 
-#### Test Coverage
-
-Because the test scripts forward arguments to `pytest`, you can enable test coverage HTML report generation by passing `--cov-report=html`.
-
-To run the local tests with coverage HTML reports:
-
+### Test Coverage
+- Enable HTML report, `pytest` fashion, by passing `--cov-report=html`:
 ```Bash
 DOMAIN=backend sh ./scripts/test-local.sh --cov-report=html
 ```
-
-To run the tests in a running stack with coverage HTML reports:
-
+- For live stack:
 ```bash
 docker-compose exec backend bash /app/tests-start.sh --cov-report=html
 ```
 
-### Live development with Python Jupyter Notebooks
-
-If you know about Python [Jupyter Notebooks](http://jupyter.org/), you can take advantage of them during local development.
-
-The `docker-compose.override.yml` file sends a variable `env` with a value `dev` to the build process of the Docker image (during local development) and the `Dockerfile` has steps to then install and configure Jupyter inside your Docker container.
-
-So, you can enter into the running Docker container:
-
+## f. Development with Jupyter Notebooks
+### Environment
+- `docker-compose.override.yml` file sends variable `env` = `dev` to the build process of the Docker image (local development), while `Dockerfile` has steps to install and configure Jupyter within the container.
+- `exec` into running container:
 ```bash
 docker-compose exec backend bash
 ```
+- Use environment variable `$JUPYTER` to run a Jupyter Notebook with everything configured. Can visit from host's web browser.
 
-And use the environment variable `$JUPYTER` to run a Jupyter Notebook with everything configured to listen on the public port (so that you can use it from your browser).
-
-It will output something like:
+- Sample output:
 
 ```console
 root@73e0ec1f1ae6:/app# $JUPYTER
@@ -221,45 +264,63 @@ root@73e0ec1f1ae6:/app# $JUPYTER
         http://(73e0ec1f1ae6 or 127.0.0.1):8888/?token=f20939a41524d021fbfc62b31be8ea4dd9232913476f4397
 ```
 
-you can copy that URL and modify the "host" to be `localhost` or the domain you are using for development (e.g. `local.dockertoolbox.tiangolo.com`), in the case above, it would be, e.g.:
-
+- Replace the "host" to be `localhost` (or relevant domain):
 ```
 http://localhost:8888/token=f20939a41524d021fbfc62b31be8ea4dd9232913476f4397
 ```
 
- and then open it in your browser.
+### Packages
+- Since Jyputer notebooks run within the container, changes to the packages/dependencies warrant a re-build and restart of the container/service. After using `poetry add` to install new package, in the host, within `backend/app` folder, run:
+```console
+$ docker-compose build backend
+```
+Then
+```console
+$ docker-compose up -d backend
+```
+- And continue with notebooks development.
 
-You will have a full Jupyter Notebook running inside your container that has direct access to your database by the container name (`db`), etc. So, you can just run sections of your backend code directly, for example with [VS Code Python Jupyter Interactive Window](https://code.visualstudio.com/docs/python/jupyter-support-py) or [Hydrogen](https://github.com/nteract/hydrogen).
-
-### Migrations
-
-As during local development your app directory is mounted as a volume inside the container, you can also run the migrations with `alembic` commands inside the container and the migration code will be in your app directory (instead of being only inside the container). So you can add it to your git repository.
-
-Make sure you create a "revision" of your models and that you "upgrade" your database with that revision every time you change them. As this is what will update the tables in your database. Otherwise, your application will have errors.
-
-* Start an interactive session in the backend container:
-
+## g. Migrations
+- Run migrations using `alembic` commands inside the container, migration code will be in your app directory, with volume mounting.
+- `exec` into backend:
 ```console
 $ docker-compose exec backend bash
 ```
-
-* If you created a new model in `./backend/app/app/models/`, make sure to import it in `./backend/app/app/db/base.py`, that Python module (`base.py`) that imports all the models will be used by Alembic.
-
-* After changing a model (for example, adding a column), inside the container, create a revision, e.g.:
-
+- For every new model in `./backend/app/app/models/`, import it in `./backend/app/app/db/base.py`, which will be used by Alembic.
+- After modifying the model, inside the container, create a revision:
 ```console
 $ alembic revision --autogenerate -m "Add column last_name to User model"
 ```
+Output:
+```console
+root@54b8181cdcfb:/app# alembic revision --autogenerate -m "Add column last_name to User model and dbschema"
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.ddl.postgresql] Detected sequence named 'user_id_seq' as owned by integer column 'user(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'item_id_seq' as owned by integer column 'item(id)', assuming SERIAL and omitting
+INFO  [alembic.autogenerate.compare] Detected added column 'user.last_name'
+INFO  [alembic.autogenerate.compare] Detected NOT NULL on column 'user.email'
+INFO  [alembic.autogenerate.compare] Detected NOT NULL on column 'user.hashed_password'
+  Generating /app/alembic/versions/14ca970985f2_add_column_last_name_to_user_model_and_.py
+  ...  done
 
-* Commit to the git repository the files generated in the alembic directory.
-
-* After creating the revision, run the migration in the database (this is what will actually change the database):
+```
+- Double-check new file generated under `backend/app/alembic/versions`
+- Run the migration to apply changes to database:
 
 ```console
 $ alembic upgrade head
 ```
+Output
+```console
+root@54b8181cdcfb:/app# alembic upgrade head
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade d4867f3a4c0a -> 14ca970985f2, Add column last_name to User model and dbschema
+```
+- Don't forget to commit.
 
-If you don't want to use migrations at all, uncomment the line in the file at `./backend/app/app/db/init_db.py` with:
+**Note**: If you don't want to use migrations at all, uncomment the line in the file at `./backend/app/app/db/init_db.py` with:
 
 ```python
 Base.metadata.create_all(bind=engine)
@@ -271,70 +332,104 @@ and comment the line in the file `prestart.sh` that contains:
 $ alembic upgrade head
 ```
 
-If you don't want to start with the default models and want to remove them / modify them, from the beginning, without having any previous revision, you can remove the revision files (`.py` Python files) under `./backend/app/alembic/versions/`. And then create a first migration as described above.
+## h. Working with db
+- You can browse the db via psql inside the db container:
+```console
+$ docker-compose exec db psql --user=postgres app
+```
+- Then some psql commands or sql queries:
+```console
+psql (12.8 (Debian 12.8-1.pgdg110+1))
+Type "help" for help.
 
-### Development with Docker Toolbox
+app-# \dt
+```
+Output:
+```console
+app-# \dt
+              List of relations
+ Schema |      Name       | Type  |  Owner
+--------+-----------------+-------+----------
+ public | alembic_version | table | postgres
+ public | item            | table | postgres
+ public | user            | table | postgres
+(3 rows)
+```
+```console
+app=# select * from public.user;
+```
+Output:
+```console
+app=# select * from public.user;
+ id | full_name |         email         |                       hashed_password
+             | is_active | is_superuser | last_name
+----+-----------+-----------------------+-------------------------------------------------
+-------------+-----------+--------------+-----------
+  1 |           | admin@fastapi-app.com | $2b$12$JA82XxbBWmnmHK2.71y/sOQ4172GvOO/mulsCuFT7
+wca.dZiLurhW | t         | t            |
+(1 row)
 
-If you are using **Docker Toolbox** in Windows or macOS instead of **Docker for Windows** or **Docker for Mac**, Docker will be running in a VirtualBox Virtual Machine, and it will have a local IP different than `127.0.0.1`, which is the IP address for `localhost` in your machine.
+```
+**Note**: This is simply a hash for "123456" for development purposes.
 
-The address of your Docker Toolbox virtual machine would probably be `192.168.99.100` (that is the default).
+## i. Working with queue
+- `celery` handler and tasks are defined in `app/worker.py` for the moment. It might make sense to split it into 2 files: one only containing the celery handler and configs, the other with all the declared tasks to be invoked by controller.
+- Queue using `celery` is configured with `redis` pub/sub and backend for persistence. To inspect the queue, cli into `redis` container (service `queue`, as declared in `docker-compose.yml`):
+```console
+$ docker-compose exec queue redis-cli
+```
+- To view task's results, get the specific task using `GET` (simple key - string value mapping):
+```
+127.0.0.1:6379> KEYS **
+ 1) "_kombu.binding.celery.pidbox"
+ 2) "celery-task-meta-c4f0990d-8d13-4848-8f5f-39be4e07c5ad"
+ 3) "celery-task-meta-04db80d2-9994-4058-8d41-8875c50534dd"
+ 4) "celery-task-meta-5a9d9666-9049-4a78-b02a-b514236d5265"
+ 5) "celery-task-meta-01e16094-76b3-418f-a80a-9f6a2b76c400"
+ 6) "celery-task-meta-456c7a24-297a-4e0e-bef5-34cb6b3643e4"
+ 7) "_kombu.binding.celery"
+ 8) "celery"
+ 9) "_kombu.binding.main-queue"
+10) "_kombu.binding.celeryev"
 
-As this is a common case, the domain `local.dockertoolbox.tiangolo.com` points to that (private) IP, just to help with development (actually `dockertoolbox.tiangolo.com` and all its subdomains point to that IP). That way, you can start the stack in Docker Toolbox, and use that domain for development. You will be able to open that URL in Chrome and it will communicate with your local Docker Toolbox directly as if it was a cloud server, including CORS (Cross Origin Resource Sharing).
+127.0.0.1:6379> GET celery-task-meta-c4f0990d-8d13-4848-8f5f-39be4e07c5ad
+"{\"status\": \"SUCCESS\", \"result\": \"test task return test fr vue again\", \"traceback\": null, \"children\": [], \"date_done\": \"2021-11-01T09:14:34.166946\", \"task_id\": \"c4f0990d-8d13-4848-8f5f-39be4e07c5ad\"}"
+```
+- To inspect queued (but not picked up by `celery`) tasks, use list retrieval for `celery` key:
+```console
+127.0.0.1:6379> LRANGE celery 1 10
+```
 
-If you used the default CORS enabled domains while generating the project, `local.dockertoolbox.tiangolo.com` was configured to be allowed. If you didn't, you will need to add it to the list in the variable `BACKEND_CORS_ORIGINS` in the `.env` file.
+## k. Working with websocket
+- Websocket support is already built into FastAPI core. Logging from websocket requests is also standard, just like other (HTTP) API routes.
+- For authorization, since native browser WebSocket does not support any standard authorization headers, we make use of cookies. Upon logging in, the backend will respond with a `set-cookie` response header, directing the browser to persist this token:
+```py
+# api.api_v1.endpoints.login
+    response.set_cookie(key="token", value=access_token, path="/", expires=access_token_expires)
+```
+- Then this `token` cookie will automatically be attached to the WS request from frontend.
+- Read further below in 4. Frontend > WebSocket and CORS gotcha.
 
-To configure it in your stack, follow the section **Change the development "domain"** below, using the domain `local.dockertoolbox.tiangolo.com`.
+# 3. Development domain name
 
-After performing those steps you should be able to open: http://local.dockertoolbox.tiangolo.com and it will be server by your stack in your Docker Toolbox virtual machine.
+## a. Development in `localhost` with a custom domain
+- With hostname/CORS/cookies issues, you can use `localhost.tiangolo.com`, it is set up to point to `localhost` (to the IP `127.0.0.1`) and all subdomains.
+- `localhost.tiangolo.com` was configured to be allowed. Otherwise, add it to the list in the variable `BACKEND_CORS_ORIGINS` in the `.env` file.
+- To configure it in your stack, follow **Change the development "domain"** below, using domain `localhost.tiangolo.com`.
+- You should be able to open: http://localhost.tiangolo.com, it will be server by your stack in `localhost`.
 
-Check all the corresponding available URLs in the section at the end.
-
-### Development in `localhost` with a custom domain
-
-You might want to use something different than `localhost` as the domain. For example, if you are having problems with cookies that need a subdomain, and Chrome is not allowing you to use `localhost`.
-
-In that case, you have two options: you could use the instructions to modify your system `hosts` file with the instructions below in **Development with a custom IP** or you can just use `localhost.tiangolo.com`, it is set up to point to `localhost` (to the IP `127.0.0.1`) and all its subdomains too. And as it is an actual domain, the browsers will store the cookies you set during development, etc.
-
-If you used the default CORS enabled domains while generating the project, `localhost.tiangolo.com` was configured to be allowed. If you didn't, you will need to add it to the list in the variable `BACKEND_CORS_ORIGINS` in the `.env` file.
-
-To configure it in your stack, follow the section **Change the development "domain"** below, using the domain `localhost.tiangolo.com`.
-
-After performing those steps you should be able to open: http://localhost.tiangolo.com and it will be server by your stack in `localhost`.
-
-Check all the corresponding available URLs in the section at the end.
-
-### Development with a custom IP
-
-If you are running Docker in an IP address different than `127.0.0.1` (`localhost`) and `192.168.99.100` (the default of Docker Toolbox), you will need to perform some additional steps. That will be the case if you are running a custom Virtual Machine, a secondary Docker Toolbox or your Docker is located in a different machine in your network.
-
-In that case, you will need to use a fake local domain (`dev.fastapi-app.com`) and make your computer think that the domain is is served by the custom IP (e.g. `192.168.99.150`).
-
-If you used the default CORS enabled domains, `dev.fastapi-app.com` was configured to be allowed. If you want a custom one, you need to add it to the list in the variable `BACKEND_CORS_ORIGINS` in the `.env` file.
-
-* Open your `hosts` file with administrative privileges using a text editor:
-  * **Note for Windows**: If you are in Windows, open the main Windows menu, search for "notepad", right click on it, and select the option "open as Administrator" or similar. Then click the "File" menu, "Open file", go to the directory `c:\Windows\System32\Drivers\etc\`, select the option to show "All files" instead of only "Text (.txt) files", and open the `hosts` file.
-  * **Note for Mac and Linux**: Your `hosts` file is probably located at `/etc/hosts`, you can edit it in a terminal running `sudo nano /etc/hosts`.
-
-* Additional to the contents it might have, add a new line with the custom IP (e.g. `192.168.99.150`) a space character, and your fake local domain: `dev.fastapi-app.com`.
-
-The new line might look like:
-
+## b. Development with a custom IP
+- If you are running Docker in an IP address different than `127.0.0.1` (`localhost`) and `192.168.99.100` (the default of Docker Toolbox), you will need to use a fake local domain (`dev.fastapi-app.com`) and make your computer think that the domain is is served by the custom IP (e.g. `192.168.99.150`).
+- `dev.fastapi-app.com` was configured to be allowed. If you want a custom one, add it to the list in the variable `BACKEND_CORS_ORIGINS` in the `.env` file.
+- Open `/etc/hosts`, added line might look like:
 ```
 192.168.99.100    dev.fastapi-app.com
 ```
+- To configure it in your stack, follow the section **Change the development "domain"** below, using domain `dev.fastapi-app.com`.
 
-* Save the file.
-  * **Note for Windows**: Make sure you save the file as "All files", without an extension of `.txt`. By default, Windows tries to add the extension. Make sure the file is saved as is, without extension.
+- You should be able to open: http://dev.fastapi-app.com, it will be server by your stack in `localhost`.
 
-...that will make your computer think that the fake local domain is served by that custom IP, and when you open that URL in your browser, it will talk directly to your locally running server when it is asked to go to `dev.fastapi-app.com` and think that it is a remote server while it is actually running in your computer.
-
-To configure it in your stack, follow the section **Change the development "domain"** below, using the domain `dev.fastapi-app.com`.
-
-After performing those steps you should be able to open: http://dev.fastapi-app.com and it will be server by your stack in `localhost`.
-
-Check all the corresponding available URLs in the section at the end.
-
-### Change the development "domain"
+## c. Change the development "domain" name
 
 If you need to use your local stack with a different domain than `localhost`, you need to make sure the domain you use points to the IP where your stack is set up. See the different ways to achieve that in the sections above (i.e. using Docker Toolbox with `local.dockertoolbox.tiangolo.com`, using `localhost.tiangolo.com` or using `dev.fastapi-app.com`).
 
@@ -376,61 +471,53 @@ docker-compose up -d
 
 and check all the corresponding available URLs in the section at the end.
 
-## Frontend development
+---
 
-* Enter the `frontend` directory, install the NPM packages and start the live server using the `npm` scripts:
-
+# 4. Frontend development
+## a. Start development
+- Enter the `frontend` directory:
 ```bash
 cd frontend
 npm install
 npm run serve
 ```
-
-Then open your browser at http://localhost:8080
-
-Notice that this live server is not running inside Docker, it is for local development, and that is the recommended workflow. Once you are happy with your frontend, you can build the frontend Docker image and start it, to test it in a production-like environment. But compiling the image at every change will not be as productive as running the local development server with live reload.
-
-Check the file `package.json` to see other available options.
-
-If you have Vue CLI installed, you can also run `vue ui` to control, configure, serve, and analyze your application using a nice local web user interface.
-
-If you are only developing the frontend (e.g. other team members are developing the backend) and there is a staging environment already deployed, you can make your local development code use that staging API instead of a full local Docker Compose stack.
-
-To do that, modify the file `./frontend/.env`, there's a section with:
+- Then browse to http://localhost:8080
+- It's recommended to work with frontend in host env for live-reload, fast npm tools, etc..
+- You can build the frontend image and start it, to test in a production-like environment.
+- Check `package.json`.
+- Can point local frontend to staging env. To achieve this,modify `./frontend/.env`, change:
 
 ```
 VUE_APP_ENV=development
 # VUE_APP_ENV=staging
 ```
-
-* Switch the comment, to:
-
+to:
 ```
 # VUE_APP_ENV=development
 VUE_APP_ENV=staging
 ```
 
-### Removing the frontend
+## b. WebSocket and CORS gotcha
+- If you went with the default development environment, with Vue at `localhost:8080` and FastAPI at `localhost`, you will run into CORS issues with `set-cookie`.
+- Specifically, `set-cookie` directs the browser to set one at `localhost:8080`, then afterwards, WebSocket connection is calling `localhost`, for which the browser will not provide the `token` for.
+- The work around for development is obtain a valid token, e.g. via Swagger, then manually set it in browser for `localhost`, or launch the Vue app at `localhost` (online via docker service) and login normally, which will make browser persist a `token` for `localhost` instead of `localhost:8080` via `set-cookie` response header, which makes other requests to api/ws at `localhost` from Vue include this `token` cookie.
 
-If you are developing an API-only app and want to remove the frontend, you can do it easily:
-
-* Remove the `./frontend` directory.
-* In the `docker-compose.yml` file, remove the whole service / section `frontend`.
-* In the `docker-compose.override.yml` file, remove the whole service / section `frontend`.
-
-Done, you have a frontend-less (api-only) app. 🔥 🚀
+## c. (Optional) Removing frontend
+If you wish to remove in favour of other frontends:
+- Remove the `./frontend` directory.
+- In the `docker-compose.yml` file, remove the whole service / section `frontend`.
+- In the `docker-compose.override.yml` file, remove the whole service / section `frontend`.
+- You have a frontend-less (api-only) app.
+- You can also remove the `FRONTEND` environment variables from:
+  * `.env`
+  * `.gitlab-ci.yml`
+  * `./scripts/*.sh`
 
 ---
 
-If you want, you can also remove the `FRONTEND` environment variables from:
+# 5. Deployment
 
-* `.env`
-* `.gitlab-ci.yml`
-* `./scripts/*.sh`
-
-But it would be only to clean them up, leaving them won't really have any effect either way.
-
-## Deployment
+_**Note**: Consult the [official docs for Deployment](https://fastapi.tiangolo.com/deployment/docker/#replication-number-of-processes) first._
 
 You can deploy the stack to a Docker Swarm mode cluster with a main Traefik proxy, set up using the ideas from <a href="https://dockerswarm.rocks" target="_blank">DockerSwarm.rocks</a>, to get automatic HTTPS certificates, etc.
 
@@ -438,7 +525,7 @@ And you can use CI (continuous integration) systems to do it automatically.
 
 But you have to configure a couple things first.
 
-### Traefik network
+## a. Traefik network
 
 This stack expects the public Traefik network to be named `traefik-public`, just as in the tutorials in <a href="https://dockerswarm.rocks" class="external-link" target="_blank">DockerSwarm.rocks</a>.
 
@@ -456,29 +543,25 @@ Change `traefik-public` to the name of the used Traefik network. And then update
 TRAEFIK_PUBLIC_NETWORK=traefik-public
 ```
 
-### Persisting Docker named volumes
+## b. Persisting Docker named volumes
 
-You need to make sure that each service (Docker container) that uses a volume is always deployed to the same Docker "node" in the cluster, that way it will preserve the data. Otherwise, it could be deployed to a different node each time, and each time the volume would be created in that new node before starting the service. As a result, it would look like your service was starting from scratch every time, losing all the previous data.
+- Make sure each service (Docker container) that uses a volume is always deployed to the same Docker "node" in the cluster to preserve the data. Otherwise, if deployed to a different node, the volume would be re-created in that new node before starting the service, as if starting from scratch and lose all the previous data.
+- Especially important for a service running a database, saving files in backend service.
+- To achieve this, put constraints in the services that use data volumes (like databases), making them be deployed to a Docker node with a specific label.
+- You need to have that label assigned to only one of your nodes.
 
-That's specially important for a service running a database. But the same problem would apply if you were saving files in your main backend service (for example, if those files were uploaded by your users, or if they were created by your system).
+### Adding services with volumes
 
-To solve that, you can put constraints in the services that use one or more data volumes (like databases) to make them be deployed to a Docker node with a specific label. And of course, you need to have that label assigned to one (only one) of your nodes.
-
-#### Adding services with volumes
-
-For each service that uses a volume (databases, services with uploaded files, etc) you should have a label constraint in your `docker-compose.yml` file.
-
-To make sure that your labels are unique per volume per stack (for example, that they are not the same for `prod` and `stag`) you should prefix them with the name of your stack and then use the same name of the volume.
-
-Then you need to have those constraints in your `docker-compose.yml` file for the services that need to be fixed with each volume.
-
-To be able to use different environments, like `prod` and `stag`, you should pass the name of the stack as an environment variable. Like:
+- For each service that uses a volume (databases, services with persisted files, etc) assign a label constraint in `docker-compose.yml`.
+- To make sure labels are unique per volume, per stack (for example, that they are not the same for `prod` and `staging`), prefix them with the name of the stack, then use the same name of the volume.
+- Then, have those constraints in `docker-compose.yml` for the services that need to be fixed with each volume.
+- To use different environments, like `prod` and `staging`, pass the name of the stack as an environment variable. Like:
 
 ```bash
 STACK_NAME=staging-fastapi-app sh ./scripts/deploy.sh
 ```
 
-To use and expand that environment variable inside the `docker-compose.yml` files you can add the constraints to the services like:
+- To use and expand that environment variable inside the `docker-compose.yml`, add the constraints to the services:
 
 ```yaml
 version: '3'
@@ -492,7 +575,7 @@ services:
           - node.labels.${STACK_NAME?Variable not set}.app-db-data == true
 ```
 
-note the `${STACK_NAME?Variable not set}`. In the script `./scripts/deploy.sh`, the `docker-compose.yml` would be converted, and saved to a file `docker-stack.yml` containing:
+- The `${STACK_NAME?Variable not set}`, used by script `./scripts/deploy.sh`, would convert `docker-compose.yml`, and saved to a file `docker-stack.yml` containing:
 
 ```yaml
 version: '3'
@@ -506,37 +589,35 @@ services:
           - node.labels.fastapi-template-app.app-db-data == true
 ```
 
-**Note**: The `${STACK_NAME?Variable not set}` means "use the environment variable `STACK_NAME`, but if it is not set, show an error `Variable not set`".
+**Note**:
+- `${STACK_NAME?Variable not set}` uses the environment variable `STACK_NAME`. If not set, show an error `Variable not set`".
+- More volumes added means the corresponding constraints to the services that use that named volume need to be added/set.
+- Then create those labels in some nodes in your Docker Swarm mode cluster. `docker-auto-labels` can do this automatically.
 
-If you add more volumes to your stack, you need to make sure you add the corresponding constraints to the services that use that named volume.
+### docker-auto-labels
 
-Then you have to create those labels in some nodes in your Docker Swarm mode cluster. You can use `docker-auto-labels` to do it automatically.
+- [`docker-auto-labels`](https://github.com/tiangolo/docker-auto-labels) can automatically read the placement constraint labels in your Docker stack (Docker Compose file), and assign them to a random Docker node in your Swarm mode cluster if those labels don't exist yet.
 
-#### `docker-auto-labels`
-
-You can use [`docker-auto-labels`](https://github.com/tiangolo/docker-auto-labels) to automatically read the placement constraint labels in your Docker stack (Docker Compose file) and assign them to a random Docker node in your Swarm mode cluster if those labels don't exist yet.
-
-To do that, you can install `docker-auto-labels`:
+- To achieve this, install `docker-auto-labels`:
 
 ```bash
 pip install docker-auto-labels
 ```
 
-And then run it passing your `docker-stack.yml` file as a parameter:
+- Then run it, passing `docker-stack.yml` as a parameter:
 
 ```bash
 docker-auto-labels docker-stack.yml
 ```
 
-You can run that command every time you deploy, right before deploying, as it doesn't modify anything if the required labels already exist.
+- You can run that command every time you deploy, right before deploying, as it doesn't modify anything if the required labels already exist.
 
-#### (Optionally) adding labels manually
+### (Optionally) adding labels manually
+Without using `docker-auto-labels`, you can manually assign the constraint labels to specific nodes in your Docker Swarm mode cluster:
 
-If you don't want to use `docker-auto-labels` or for any reason you want to manually assign the constraint labels to specific nodes in your Docker Swarm mode cluster, you can do the following:
+* First, SSH into your Docker Swarm mode cluster.
 
-* First, connect via SSH to your Docker Swarm mode cluster.
-
-* Then check the available nodes with:
+* Then check the available nodes, and chose a node from the list. For example, `dog.example.com`:
 
 ```console
 $ docker node ls
@@ -550,22 +631,20 @@ nfa3d4df2df34as2fd34230rm *   dog.example.com        Ready               Active 
 c4sdf2342asdfasd4234234ii     snake.example.com      Ready               Active              Reachable
 ```
 
-then chose a node from the list. For example, `dog.example.com`.
-
 * Add the label to that node. Use as label the name of the stack you are deploying followed by a dot (`.`) followed by the named volume, and as value, just `true`, e.g.:
 
 ```bash
 docker node update --label-add fastapi-template-app.app-db-data=true dog.example.com
 ```
 
-* Then you need to do the same for each stack version you have. For example, for staging you could do:
+* Then, do the same for each stack version you have. For example, for staging:
 
 ```bash
 docker node update --label-add staging-fastapi-app.app-db-data=true cat.example.com
 ```
 
-### Deploy to a Docker Swarm mode cluster
-
+## c. Deploy to a Docker Swarm mode cluster
+### Procedure
 There are 3 steps:
 
 1. **Build** your app images
@@ -621,15 +700,15 @@ bash ./scripts/deploy.sh
 
 ---
 
-If you change your mind and, for example, want to deploy everything to a different domain, you only have to change the `DOMAIN` environment variable in the previous commands. If you wanted to add a different version / environment of your stack, like "`preproduction`", you would only have to set `TAG=preproduction` in your command and update these other environment variables accordingly. And it would all work, that way you could have different environments and deployments of the same app in the same cluster.
+- If you change your mind and, for example, want to deploy everything to a different domain, you only have to change the `DOMAIN` environment variable in the previous commands.
 
-#### Deployment Technical Details
+- If you wanted to add a different version / environment of your stack, like "`preproduction`", you would only have to set `TAG=preproduction` in your command and update these other environment variables accordingly. And it would all work, that way you could have different environments and deployments of the same app in the same cluster.
 
-Building and pushing is done with the `docker-compose.yml` file, using the `docker-compose` command. The file `docker-compose.yml` uses the file `.env` with default environment variables. And the scripts set some additional environment variables as well.
+### Deployment Technical Details
 
-The deployment requires using `docker stack` instead of `docker-swarm`, and it can't read environment variables or `.env` files. Because of that, the `deploy.sh` script generates a file `docker-stack.yml` with the configurations from `docker-compose.yml` and injecting the environment variables in it. And then uses it to deploy the stack.
-
-You can do the process by hand based on those same scripts if you wanted. The general structure is like this:
+- Building and pushing is done with the `docker-compose.yml` file, using the `docker-compose` command. The file `docker-compose.yml` uses the file `.env` with default environment variables. The scripts set some additional environment variables as well.
+- Deployment requires using `docker stack` instead of `docker-swarm`, and it can't read environment variables or `.env` files. Because of that, the `deploy.sh` script generates a file `docker-stack.yml` with configs read from `docker-compose.yml`, then injecting the environment variables in it. This `docker-stack.yml` is then used to deploy the stack.
+- Alternatively, you can do the process manually using those same scripts (e.g. different CI). The general structure looks like this:
 
 ```bash
 # Use the environment variables passed to this script, as TAG and FRONTEND_ENV
@@ -658,152 +737,104 @@ docker-auto-labels docker-stack.yml
 docker stack deploy -c docker-stack.yml --with-registry-auth "${STACK_NAME?Variable not set}"
 ```
 
-### Continuous Integration / Continuous Delivery
+## d. Continuous Integration / Continuous Delivery
 
-If you use GitLab CI, the included `.gitlab-ci.yml` can automatically deploy it. You may need to update it according to your GitLab configurations.
+- `.gitlab-ci.yml` is included and can automatically deploy. You may need to update it according to your GitLab configurations.
 
-If you use any other CI / CD provider, you can base your deployment from that `.gitlab-ci.yml` file, as all the actual script steps are performed in `bash` scripts that you can easily re-use.
+- For other CI / CD providers, base your deployment from `.gitlab-ci.yml`, since all script steps are performed in reusable `bash` scripts.
 
 GitLab CI is configured assuming 2 environments following GitLab flow:
 
 * `prod` (production) from the `production` branch.
 * `stag` (staging) from the `master` branch.
 
-If you need to add more environments, for example, you could imagine using a client-approved `preprod` branch, you can just copy the configurations in `.gitlab-ci.yml` for `stag` and rename the corresponding variables. The Docker Compose file and environment variables are configured to support as many environments as you need, so that you only need to modify `.gitlab-ci.yml` (or whichever CI system configuration you are using).
+- If you require more environments, e.g. client-approved/QA `preprod` branch, copy the configurations in `.gitlab-ci.yml` for `stag`, rename the corresponding variables.
+- The Docker Compose file and environment variables are configured to support as many environments as you need, so that you only need to modify `.gitlab-ci.yml`.
 
-## Docker Compose files and env vars
+---
 
-There is a main `docker-compose.yml` file with all the configurations that apply to the whole stack, it is used automatically by `docker-compose`.
+# 6. Docker Compose files and env vars
 
-And there's also a `docker-compose.override.yml` with overrides for development, for example to mount the source code as a volume. It is used automatically by `docker-compose` to apply overrides on top of `docker-compose.yml`.
+- Main `docker-compose.yml` file contains all configurations for the whole stack.
+- `docker-compose.override.yml` gives overrides for development, e.g. volume mount source code. It is used automatically by `docker-compose`, applying overrides on top of `docker-compose.yml` (merging `yaml`).
+- These Docker Compose files use the `.env` file, containing configurations to be injected as environment variables in the containers.
+- They also use some additional configurations taken from environment variables set in the scripts before calling the `docker-compose` command.
+- This design pattern support "stages" workflow, like development, building, testing, and deployment, allowing the deployment to different environments.
+- Extending is simple, e.g. to have another deployment environment, say `preprod`, just change environment variables, while keep using the same Docker Compose files.
 
-These Docker Compose files use the `.env` file containing configurations to be injected as environment variables in the containers.
+## The .env file
 
-They also use some additional configurations taken from environment variables set in the scripts before calling the `docker-compose` command.
+- `.env` file is the one that contains all your configurations, generated keys and passwords, etc.
+- If git-ignored, add each environment variable to CI/CD system, and updating the `docker-compose.yml` file to read that specific env var instead of reading the `.env` file.
 
-It is all designed to support several "stages", like development, building, testing, and deployment. Also, allowing the deployment to different environments like staging and production (and you can add more environments very easily).
+---
 
-They are designed to have the minimum repetition of code and configurations, so that if you need to change something, you have to change it in the minimum amount of places. That's why files use environment variables that get auto-expanded. That way, if for example, you want to use a different domain, you can call the `docker-compose` command with a different `DOMAIN` environment variable instead of having to change the domain in several places inside the Docker Compose files.
-
-Also, if you want to have another deployment environment, say `preprod`, you just have to change environment variables, but you can keep using the same Docker Compose files.
-
-### The .env file
-
-The `.env` file is the one that contains all your configurations, generated keys and passwords, etc.
-
-Depending on your workflow, you could want to exclude it from Git, for example if your project is public. In that case, you would have to make sure to set up a way for your CI tools to obtain it while building or deploying your project.
-
-One way to do it could be to add each environment variable to your CI/CD system, and updating the `docker-compose.yml` file to read that specific env var instead of reading the `.env` file.
-
-## URLs
+# 7. URLs
 
 These are the URLs that will be used and generated by the project.
 
-### Production URLs
+## a. Production URLs
+- Production URLs, from the branch `production`.
+- Frontend: https://fastapi-app.com
+- Backend: https://fastapi-app.com/api/
+- Automatic Interactive Docs (Swagger UI): https://fastapi-app.com/docs
+- Automatic Alternative Docs (ReDoc): https://fastapi-app.com/redoc
+- PGAdmin: https://pgadmin.fastapi-app.com
+- Flower: https://flower.fastapi-app.com
 
-Production URLs, from the branch `production`.
+## b. Staging URLs
+- Staging URLs, from the branch `master`.
+- Frontend: https://staging.fastapi-app.com
+- Backend: https://staging.fastapi-app.com/api/
+- Automatic Interactive Docs (Swagger UI): https://staging.fastapi-app.com/docs
+- Automatic Alternative Docs (ReDoc): https://staging.fastapi-app.com/redoc
+- PGAdmin: https://pgadmin.staging.fastapi-app.com
+- Flower: https://flower.staging.fastapi-app.com
 
-Frontend: https://fastapi-app.com
+## c. Development URLs
+- Development URLs, for local development.
+- Frontend: http://localhost
+- Backend: http://localhost/api/
+- Automatic Interactive Docs (Swagger UI): https://localhost/docs
+- Automatic Alternative Docs (ReDoc): https://localhost/redoc
+- PGAdmin: http://localhost:5050
+- Flower: http://localhost:5555
+- Traefik UI: http://localhost:8090
 
-Backend: https://fastapi-app.com/api/
+## d. Development with Docker Toolbox URLs
+- Development URLs, for local development.
+- Frontend: http://local.dockertoolbox.tiangolo.com
+- Backend: http://local.dockertoolbox.tiangolo.com/api/
+- Automatic Interactive Docs (Swagger UI): https://local.dockertoolbox.tiangolo.com/docs
+- Automatic Alternative Docs (ReDoc): https://local.dockertoolbox.tiangolo.com/redoc
+- PGAdmin: http://local.dockertoolbox.tiangolo.com:5050
+- Flower: http://local.dockertoolbox.tiangolo.com:5555
+- Traefik UI: http://local.dockertoolbox.tiangolo.com:8090
 
-Automatic Interactive Docs (Swagger UI): https://fastapi-app.com/docs
+## e. Development with a custom IP URLs
+- Development URLs, for local development.
+- Frontend: http://dev.fastapi-app.com
+- Backend: http://dev.fastapi-app.com/api/
+- Automatic Interactive Docs (Swagger UI): https://dev.fastapi-app.com/docs
+- Automatic Alternative Docs (ReDoc): https://dev.fastapi-app.com/redoc
+- PGAdmin: http://dev.fastapi-app.com:5050
+- Flower: http://dev.fastapi-app.com:5555
+- Traefik UI: http://dev.fastapi-app.com:8090
 
-Automatic Alternative Docs (ReDoc): https://fastapi-app.com/redoc
+## f. Development in localhost with a custom domain URLs
+- Development URLs, for local development.
+- Frontend: http://localhost.tiangolo.com
+- Backend: http://localhost.tiangolo.com/api/
+- Automatic Interactive Docs (Swagger UI): https://localhost.tiangolo.com/docs
+- Automatic Alternative Docs (ReDoc): https://localhost.tiangolo.com/redoc
+- PGAdmin: http://localhost.tiangolo.com:5050
+- Flower: http://localhost.tiangolo.com:5555
+- Traefik UI: http://localhost.tiangolo.com:8090
 
-PGAdmin: https://pgadmin.fastapi-app.com
+---
 
-Flower: https://flower.fastapi-app.com
-
-### Staging URLs
-
-Staging URLs, from the branch `master`.
-
-Frontend: https://staging.fastapi-app.com
-
-Backend: https://staging.fastapi-app.com/api/
-
-Automatic Interactive Docs (Swagger UI): https://staging.fastapi-app.com/docs
-
-Automatic Alternative Docs (ReDoc): https://staging.fastapi-app.com/redoc
-
-PGAdmin: https://pgadmin.staging.fastapi-app.com
-
-Flower: https://flower.staging.fastapi-app.com
-
-### Development URLs
-
-Development URLs, for local development.
-
-Frontend: http://localhost
-
-Backend: http://localhost/api/
-
-Automatic Interactive Docs (Swagger UI): https://localhost/docs
-
-Automatic Alternative Docs (ReDoc): https://localhost/redoc
-
-PGAdmin: http://localhost:5050
-
-Flower: http://localhost:5555
-
-Traefik UI: http://localhost:8090
-
-### Development with Docker Toolbox URLs
-
-Development URLs, for local development.
-
-Frontend: http://local.dockertoolbox.tiangolo.com
-
-Backend: http://local.dockertoolbox.tiangolo.com/api/
-
-Automatic Interactive Docs (Swagger UI): https://local.dockertoolbox.tiangolo.com/docs
-
-Automatic Alternative Docs (ReDoc): https://local.dockertoolbox.tiangolo.com/redoc
-
-PGAdmin: http://local.dockertoolbox.tiangolo.com:5050
-
-Flower: http://local.dockertoolbox.tiangolo.com:5555
-
-Traefik UI: http://local.dockertoolbox.tiangolo.com:8090
-
-### Development with a custom IP URLs
-
-Development URLs, for local development.
-
-Frontend: http://dev.fastapi-app.com
-
-Backend: http://dev.fastapi-app.com/api/
-
-Automatic Interactive Docs (Swagger UI): https://dev.fastapi-app.com/docs
-
-Automatic Alternative Docs (ReDoc): https://dev.fastapi-app.com/redoc
-
-PGAdmin: http://dev.fastapi-app.com:5050
-
-Flower: http://dev.fastapi-app.com:5555
-
-Traefik UI: http://dev.fastapi-app.com:8090
-
-### Development in localhost with a custom domain URLs
-
-Development URLs, for local development.
-
-Frontend: http://localhost.tiangolo.com
-
-Backend: http://localhost.tiangolo.com/api/
-
-Automatic Interactive Docs (Swagger UI): https://localhost.tiangolo.com/docs
-
-Automatic Alternative Docs (ReDoc): https://localhost.tiangolo.com/redoc
-
-PGAdmin: http://localhost.tiangolo.com:5050
-
-Flower: http://localhost.tiangolo.com:5555
-
-Traefik UI: http://localhost.tiangolo.com:8090
-
-## Project generation and updating, or re-generating
+# 8. Project generation and updating, or re-generating
+## a. cookiecutter
 
 This project was generated using https://github.com/tiangolo/full-stack-fastapi-postgresql with:
 
@@ -812,22 +843,33 @@ pip install cookiecutter
 cookiecutter https://github.com/tiangolo/full-stack-fastapi-postgresql
 ```
 
-You can check the variables used during generation in the file `cookiecutter-config-file.yml`.
+## b. Input options generating project template
 
-You can generate the project again with the same configurations used the first time.
-
-That would be useful if, for example, the project generator (`tiangolo/full-stack-fastapi-postgresql`) was updated and you wanted to integrate or review the changes.
-
-You could generate a new project with the same configurations as this one in a parallel directory. And compare the differences between the two, without having to overwrite your current code but being able to use the same variables used for your current project.
-
-To achieve that, the generated project includes the file `cookiecutter-config-file.yml` with the current variables used.
-
-You can use that file while generating a new project to reuse all those variables.
-
-For example, run:
-
-```console
-$ cookiecutter --config-file ./cookiecutter-config-file.yml --output-dir ../project-copy https://github.com/tiangolo/full-stack-fastapi-postgresql
-```
-
-That will use the file `cookiecutter-config-file.yml` in the current directory (in this project) to generate a new project inside a sibling directory `project-copy`.
+The input variables, with their default values (some auto generated) are:
+-    `project_name`: The name of the project
+-    `project_slug`: The development friendly name of the project. By default, based on the project name
+-    `domain_main`: The domain in where to deploy the project for production (from the branch production), used by the load balancer, backend, etc. By default, based on the project slug.
+-    `domain_staging`: The domain in where to deploy while staging (before production) (from the branch master). By default, based on the main domain.
+-    `docker_swarm_stack_name_main`: The name of the stack while deploying to Docker in Swarm mode for production. By default, based on the domain.
+-    `docker_swarm_stack_name_staging`: The name of the stack while deploying to Docker in Swarm mode for staging. By default, based on the domain.
+-    `secret_key`: Backend server secret key. Use the method above to generate it.
+-    `first_superuser`: The first superuser generated, with it you will be able to create more users, etc. By default, based on the domain.
+-    `first_superuser_password`: First superuser password. Use the method above to generate it.
+-    `backend_cors_origins`: Origins (domains, more or less) that are enabled for CORS (Cross Origin Resource Sharing). This allows a frontend in one domain (e.g. https://dashboard.example.com) to communicate with this backend, that could be living in another domain (e.g. https://api.example.com). It can also be used to allow your local frontend (with a custom hosts domain mapping, as described in the project's README.md) that could be living in http://dev.example.com:8080 to communicate with the backend at https://stag.example.com. Notice the http vs https and the dev. prefix for local development vs the "staging" stag. prefix. By default, it includes origins for production, staging and development, with ports commonly used during local development by several popular frontend frameworks (Vue with :8080, React, Angular).
+-    `smtp_port`: Port to use to send emails via SMTP. By default 587.
+-    `smtp_host`: Host to use to send emails, it would be given by your email provider, like Mailgun, Sparkpost, etc.
+-    `smtp_user`: The user to use in the SMTP connection. The value will be given by your email provider.
+-    `smtp_password`: The password to be used in the SMTP connection. The value will be given by the email provider.
+-    `smtp_emails_from_email`: The email account to use as the sender in the notification emails, it would be something like info@your-custom-domain.com.
+-    `postgres_password`: Postgres database password. Use the method above to generate it. (You could easily modify it to use MySQL, MariaDB, etc).
+-    `pgadmin_default_user`: PGAdmin default user, to log-in to the PGAdmin interface.
+-    `pgadmin_default_user_password`: PGAdmin default user password. Generate it with the method above.
+-    `traefik_constraint_tag`: The tag to be used by the internal Traefik load balancer (for example, to divide requests between backend and frontend) for production. Used to separate this stack from any other stack you might have. This should identify each stack in each environment (production, staging, etc).
+-    `traefik_constraint_tag_staging`: The Traefik tag to be used while on staging.
+-    `traefik_public_constraint_tag`: The tag that should be used by stack services that should communicate with the public.
+-    `flower_auth`: Basic HTTP authentication for flower, in the formuser:password. By default: "admin:changethis".
+-    `sentry_dsn`: Key URL (DSN) of Sentry, for live error reporting. You can use the open source version or a free account. E.g.: https://1234abcd:5678ef@sentry.example.com/30.
+-    `docker_image_prefix`: Prefix to use for Docker image names. If you are using GitLab Docker registry it would be based on your code repository. E.g.: git.example.com/development-team/my-awesome-project/.
+-    `docker_image_backend`: Docker image name for the backend. By default, it will be based on your Docker image prefix, e.g.: git.example.com/development-team/my-awesome-project/backend. And depending on your environment, a different tag will be appended ( prod, stag, branch ). So, the final image names used will be like: git.example.com/development-team/my-awesome-project/backend:prod.
+-    `docker_image_celeryworker`: Docker image for the celery worker. By default, based on your Docker image prefix.
+-    `docker_image_frontend`: Docker image for the frontend. By default, based on your Docker image prefix.
