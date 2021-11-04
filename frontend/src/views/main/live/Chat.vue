@@ -77,15 +77,15 @@ export default class LiveChat extends Vue {
 
   public listeners: WSListeners = {
     onOpen: (event: Event) => {
-      console.log('== connected to backend via ws');
+      // console.log('== connected to backend via ws');
       this.connectionStatus = 'connected';
     },
     onClose: (event: CloseEvent) => {
-      console.log('== disconnected from backend via ws');
+      // console.log('== disconnected from backend via ws');
       this.connectionStatus = 'disconnected';
     },
     onError: (error: Error, event: Event) => {
-      console.log(error);
+      // console.log(error);
       this.errorMessage = error.message;
       this.connectionStatus = 'error';
     },
