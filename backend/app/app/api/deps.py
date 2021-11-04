@@ -68,8 +68,6 @@ async def get_authed_user_for_ws(
     db: Session = Depends(get_db),
     token: Optional[str] = Cookie(None),
 ) -> models.User:
-    print("TOKEN", token)
-
     if (token is None):
         await ws.close(code=status.WS_1008_POLICY_VIOLATION)
         raise HTTPException(status_code=401, detail="Unauthorized.")
