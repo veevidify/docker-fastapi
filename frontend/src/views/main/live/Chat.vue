@@ -6,7 +6,7 @@
       </v-card-title>
       <v-card-text>
         <template>
-          <div class="my-3" v-for="msg in mockMsgs" v-bind:key="msg.id">
+          <div class="my-3" v-for="msg in messages" v-bind:key="msg.id">
             <div class="primary--text text--lighten-3">
               {{ msg.from }}
             </div>
@@ -61,35 +61,48 @@ import { commitAddNotification, commitRemoveNotification } from '@/store/main/mu
 @Component
 export default class LiveChat extends Vue {
   // implement listeners to interact with store, and with backend via WS, here
-  public mockMsgs = [
+
+  public connectionStatus: string = 'connecting';
+  public errorMessage: string | null = null;
+  public currentMessage: string = '';
+  public valid: boolean = true;
+  public messages = [
     {
       id: '1',
-      from: 'User1',
-      message: 'Hello',
-    },
-    {
-      id: '2',
-      from: 'User2',
-      message: 'Hi',
+      from: 'App',
+      message: 'Welcome to Live Chat',
     },
   ];
 
+  public listeners: WSListeners = {
+    onOpen: (event: Event) => {
+      console.log('== connected to backend via ws');
+      this.connectionStatus = 'connected';
+    },
+    onClose: (event: CloseEvent) => {
+      console.log('== disconnected from backend via ws');
+      this.connectionStatus = 'disconnected';
+    },
+    onError: (error: Error, event: Event) => {
+      console.log(error);
+      this.errorMessage = error.message;
+      this.connectionStatus = 'error';
+    },
+    onMsg: (msg: string, event: MessageEvent) => {
+      const decodedMsg = JSON.parse(msg);
+      console.log(decodedMsg);
+      this.messages.push();
+    },
+  };
+
   public async mounted() {
+    this.$socketClient.setListeners(this.listeners);
     this.$socketClient.connect();
   }
 
-  // const listeners: WSListeners = {}
-  // open: log event, text - status: connected
-  // close: log event, text - status: closed
-  // error: log event, text - status: error
-  // recon: log event, text - status: attempting to recon
-  // msg: log event, add notif? display message
-
-  // send msg: use ws to send
-
-  // this.$socketClient.setListeners(listeners)
-
-
+  public send() {
+    console.log('== send msg: ', this.currentMessage);
+  }
 }
 
 </script>

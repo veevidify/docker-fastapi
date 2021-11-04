@@ -7,3 +7,9 @@ class Msg(BaseModel):
 
 class ResponseMsg(Msg):
     task_id: str
+
+class WSResponse(BaseModel):
+    scope: str
+    intent: str
+    by: str
+    message: str

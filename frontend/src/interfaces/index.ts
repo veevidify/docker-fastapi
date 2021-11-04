@@ -36,3 +36,10 @@ export interface ITaskStatus {
 }
 
 export type ITaskPayload = ITaskStatus & WithTaskId;
+
+export interface IWSMessage {
+    scope: string;
+    intent: string;
+    by: string;
+    message: string;
+}
