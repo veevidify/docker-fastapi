@@ -2,6 +2,7 @@ from datetime import timedelta
 from typing import Any
 
 from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -44,7 +45,7 @@ def login_access_token(
     }
 
     response = JSONResponse(content=resp_content)
-    response.set_cookie(key="token", value=access_token)
+    response.set_cookie(key="token", value=access_token, path="/", expires=access_token_expires)
 
     return response
 

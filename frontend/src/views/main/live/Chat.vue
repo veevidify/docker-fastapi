@@ -6,15 +6,15 @@
       </v-card-title>
       <v-card-text>
         <template>
-          <div class="my-3">
+          <div class="my-3" v-for="msg in mockMsgs" v-bind:key="msg.id">
             <div class="primary--text text--lighten-3">
-              User email here
+              {{ msg.from }}
             </div>
             <v-layout row justify-start>
               <v-flex shrink>
                 <!-- rounded-xl not working for this version of vuetify -->
                 <div class="subheading secondary text--darken-2 pa-2 text-center text-wrap" style="border-radius: 8px">
-                  Chat text here
+                  {{ msg.message }}
                 </div>
               </v-flex>
             </v-layout>
@@ -33,7 +33,7 @@
               >
                 <v-text-field
                   label="Say something"
-                  v-model="message"
+                  v-model="currentMessage"
                   required
                 ></v-text-field>
               </v-form>
@@ -61,9 +61,34 @@ import { commitAddNotification, commitRemoveNotification } from '@/store/main/mu
 @Component
 export default class LiveChat extends Vue {
   // implement listeners to interact with store, and with backend via WS, here
-  // open: log event
+  public mockMsgs = [
+    {
+      id: '1',
+      from: 'User1',
+      message: 'Hello',
+    },
+    {
+      id: '2',
+      from: 'User2',
+      message: 'Hi',
+    },
+  ];
+
+  public async mounted() {
+    this.$socketClient.connect();
+  }
+
   // const listeners: WSListeners = {}
+  // open: log event, text - status: connected
+  // close: log event, text - status: closed
+  // error: log event, text - status: error
+  // recon: log event, text - status: attempting to recon
+  // msg: log event, add notif? display message
+
+  // send msg: use ws to send
+
   // this.$socketClient.setListeners(listeners)
+
 
 }
 

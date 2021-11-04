@@ -11,18 +11,19 @@ router = APIRouter()
 
 # prefix not working
 # PR currently undergoing merge
-@router.websocket("/api/live/{client_id}")
+@router.websocket("/api/live")
 async def chat_room(
     ws: WebSocket,
-    client_id: int,
     current_user: models.User = Depends(deps.get_authed_user_for_ws),
 ):
+    user_email = current_user.email
+
     await manager.connect(ws)
-    await manager.broadcast(f"Client #{client_id} has entered the chat.")
+    await manager.broadcast(f"User #{user_email} has entered the chat.")
     try:
         while True:
             data = await ws.receive_text()
-            await manager.broadcast(f"Client #{client_id} say: {data}")
+            await manager.broadcast(f"User {user_email} say: {data}")
     except WebSocketDisconnect:
         manager.disconnect(ws)
-        await manager.broadcast(f"Client #{client_id} has left the chat.")
+        await manager.broadcast(f"User #{user_email} has left the chat.")

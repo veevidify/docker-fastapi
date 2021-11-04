@@ -13,8 +13,6 @@ const wsPlugin = {
     wsListeners?: WSListeners,
   ) => {
     const socketClient = new WSClient(connectionUrl, wsOptions, wsListeners);
-    socketClient.connect();
-
     Vue.prototype.$socketClient = socketClient;
   },
 };
