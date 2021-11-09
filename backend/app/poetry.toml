@@ -1,3 +1,4 @@
 [virtualenvs]
 create = true
-in-project = true
+# uncomment in-project to create .venv within the proj (not recommended)
+# in-project = true

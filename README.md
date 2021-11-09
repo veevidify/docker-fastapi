@@ -104,22 +104,21 @@ $ cd `backend/app/`
 $ cat poetry.toml
 ```
 Output:
-```console
+```toml
 [virtualenvs]
 create = true
-in-project = true
+# uncomment in-project to create .venv within the proj (not recommended)
+# in-project = true
+```
+- Start a shell session (venv):
+```console
+$ poetry shell
 ```
 - Get packages
 ```console
 $ poetry install
 ```
-
-- Start a shell session (venv):
-
-```console
-$ poetry shell
-```
-- In your editor, point python interpreter and environment to the one `poetry` created, e.g. `./backend/app/.venv/bin/python3.8`
+- In your IDE, point python interpreter and environment to the one `poetry` created, e.g. `./backend/app/.venv/bin/python3.8` (if in-project is uncommented in `poetry.toml`), otherwise `~/.cache/pypoetry/virtualenvs/app-[random_string]-py3.8/bin/python3.8`
 
 - If new packages added to `pyproject.toml`, run update to resolve dependencies and create new lockfile:
 ```console
@@ -127,6 +126,8 @@ $ poetry update
 ```
 
 _**Note**: It's important to note that poetry commands should be invoked from the host, within backend/app folder, instead of from within docker container service, in order to avoid conflicts._
+
+_**Note**: Poetry virtual envs do not affect docker environment bootstrapped by `docker-compose`. It's purely for IDE and intellisense._
 
 ## b. Structures
 - SQLAlchemy models: `./backend/app/app/models/`
